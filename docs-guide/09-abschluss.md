@@ -1,7 +1,7 @@
 # 9 · Abschluss und Einordnung
 
-**Agenten lohnen sich dort, wo Sprache verstanden oder erzeugt oder flexibel
-entschieden werden muss.** Alles Berechenbare gehört in normalen Code, und **MCP
+Agenten lohnen sich dort, wo **Sprache** verstanden oder erzeugt oder **flexibel
+entschieden** werden muss. Alles Berechenbare gehört in normalen Code, und **MCP
 verbindet beide Welten**.
 
 ## Wann ein Agent, wann normaler Code?
@@ -13,20 +13,20 @@ verbindet beide Welten**.
 | Mehrere Systeme situationsabhängig kombinieren | Harte Anforderungen an Korrektheit und Reproduzierbarkeit |
 | Ein Mensch prüft das Ergebnis | Läuft unbeaufsichtigt und muss immer funktionieren |
 
-Im Projekt sind **Datum, Wetter und Rendering Code**. **Die Tagesmessage und die
-Steuerung übernimmt das Modell.** Wer den Screen regelmäßig automatisch aktualisieren
-wollte, bräuchte dafür keinen Agenten, sondern **ein Skript mit einem einzelnen
-LLM-Aufruf für die Message**.
+Im Projekt sind Datum, Wetter und Rendering **Code**. Die Tagesmessage und die
+Steuerung übernimmt das **Modell**. Wer den Screen regelmäßig automatisch aktualisieren
+wollte, bräuchte dafür keinen Agenten, sondern ein Skript mit einem einzelnen
+LLM-Aufruf für die Message.
 
 ## Was man aus dem Projekt mitnehmen kann
 
 1. **Das Modell ist austauschbar.** Claude, DeepSeek und ein lokales Modell arbeiten
    mit denselben Tools. Man legt sich nicht auf einen Anbieter fest.
-2. **Der Harness ist die eigentliche Plattform.** Kontext, Berechtigungen und
+2. Der **Harness** ist die eigentliche **Plattform**. Kontext, Berechtigungen und
    Erweiterungen entscheiden über Qualität und Sicherheit.
 3. **MCP ist die Integrationsschicht.** Ein Server, einmal gebaut, funktioniert in
    jedem MCP-fähigen Werkzeug.
-4. **Die Qualität eines MCP-Servers steckt in Beschreibungen, Schemas und
+4. Die Qualität eines MCP-Servers steckt in **Beschreibungen, Schemas und
    Fehlertexten**, nicht in der Menge der Tools.
 
 ## Risiken und offene Fragen
@@ -51,10 +51,10 @@ LLM-Aufruf für die Message**.
 
 Nachlesen lassen sie sich in [`docs-dev`](../docs-dev/01-projektuebersicht.md).
 
-- **Tool-Verträge vor dem Code spezifiziert** (`03-mcp-tool-spezifikation.md`)
-- **Logik (`lib/`) und MCP-Hülle (`tools/`) getrennt**
-- **Fehler- und Fallback-Verhalten für jeden Ausfall durchdacht**
+- **Tool-Verträge vor dem Code** spezifiziert (`03-mcp-tool-spezifikation.md`)
+- Logik (`lib/`) und MCP-Hülle (`tools/`) **getrennt**
+- **Fehler- und Fallback-Verhalten** für jeden Ausfall durchdacht
   (`05-fehler-und-fallbacks.md`)
-- **Prompt-Regeln explizit und prüfbar formuliert** (`04-prompt-design.md`)
-- **Bestehende Infrastruktur (LaraPaper) statt Eigenbau genutzt**, nachdem die API
+- **Prompt-Regeln explizit und prüfbar** formuliert (`04-prompt-design.md`)
+- Bestehende **Infrastruktur** (LaraPaper) statt **Eigenbau** genutzt, nachdem die API
   recherchiert war (`06-recherche-trmnl.md`)
