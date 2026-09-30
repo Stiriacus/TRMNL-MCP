@@ -1,9 +1,9 @@
 # 1 · Die Bausteine
 
-**Weder Modell noch Harness können allein etwas.** Das Modell denkt und entscheidet,
-kann aber nur Text erzeugen. Der Harness ist die Werkzeugkiste drumherum mit
+Weder Modell noch Harness können allein etwas. Das Modell denkt und entscheidet,
+kann aber nur **Text** erzeugen. Der Harness ist die Werkzeugkiste drumherum mit
 Chat-Kontext, Tool-Aufrufen und Berechtigungen, trifft aber selbst keine einzige
-Entscheidung. **Erst zusammen entsteht ein Agent.** Weitere Werkzeuge kommen über
+Entscheidung. Erst zusammen entsteht ein **Agent**. Weitere Werkzeuge kommen über
 MCP in standardisierter Form dazu.
 
 ## Fünf Begriffe, sauber getrennt
@@ -18,9 +18,9 @@ MCP in standardisierter Form dazu.
 
 ## Das Modell ruft nichts selbst auf
 
-Das ist die wichtigste Einsicht. **Das Modell schreibt nur eine strukturierte Bitte**,
-etwa „ich möchte `get_weather` mit `lat=52.52, lon=13.41` aufrufen“. **Ausgeführt
-wird der Aufruf vom Harness.** Das Ergebnis kommt als Text zurück in den Kontext, und
+Das ist die wichtigste Einsicht. Das Modell schreibt nur eine **strukturierte Bitte**,
+etwa „ich möchte `get_weather` mit `lat=52.52, lon=13.41` aufrufen“. Ausgeführt
+wird der Aufruf vom **Harness**. Das Ergebnis kommt als Text zurück in den Kontext, und
 das Modell macht weiter.
 
 ```mermaid
@@ -56,19 +56,19 @@ sequenceDiagram
 | bewertet das Ergebnis und plant den nächsten Schritt | hängt das Ergebnis an den Kontext und fragt erneut |
 | formuliert die Antwort | zeigt sie an und speichert den Verlauf |
 
-**Der Harness ist reine Mechanik.** Er leitet weiter, führt aus und passt auf. Ohne
+Der Harness ist **reine Mechanik**. Er leitet weiter, führt aus und passt auf. Ohne
 Modell ist er eine Werkzeugkiste, die niemand öffnet. Ohne Harness ist das Modell ein
 Kopf ohne Hände.
 
 Daraus folgen drei Punkte, die im weiteren Verlauf immer wieder auftauchen.
 
-- **Kontrolle liegt beim Harness.** Er entscheidet nicht, *was* passiert, aber *ob*
+- **Kontrolle** liegt beim Harness. Er entscheidet nicht, *was* passiert, aber *ob*
   ein angefragter Tool-Aufruf erlaubt ist (Berechtigungen, Sandbox). Das Modell kann
   nur darum bitten.
-- **Das Modell sieht nur Beschreibungen.** Welches Tool es wann nutzt, entscheidet
+- Das Modell sieht nur **Beschreibungen**. Welches Tool es wann nutzt, entscheidet
   es anhand von Name, Beschreibung und Schema. Deshalb sind gute Beschreibungen so
   wichtig (→ [Seite 6](06-mcp-was-zaehlt.md)).
-- **Modelle sind austauschbar.** Solange ein Modell Tool-Calls beherrscht, kann
+- Modelle sind **austauschbar**. Solange ein Modell Tool-Calls beherrscht, kann
   derselbe Harness mit denselben Tools arbeiten (→ [Seite 3](03-pi-aufsetzen.md)).
 
 ## Analogie
