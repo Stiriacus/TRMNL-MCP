@@ -1,28 +1,28 @@
 # 4 · MCP verstehen
 
-Bevor es MCP gab, gehörte jedes Werkzeug fest zu *einer* KI-Anwendung. **MCP trennt
-das Werkzeug von der Anwendung.** Das Werkzeug wird ein eigenständiger Server, der
+Bevor es MCP gab, gehörte jedes Werkzeug fest zu *einer* KI-Anwendung. MCP trennt
+**das Werkzeug von der Anwendung**. Das Werkzeug wird ein eigenständiger Server, der
 sein Handbuch selbst mitbringt und über einen genormten Anschluss angesprochen wird.
-**Einmal gebaut, ist es in jedem MCP-fähigen Harness mit jedem Modell nutzbar.**
+**Einmal gebaut**, ist es in jedem MCP-fähigen Harness mit jedem Modell **nutzbar**.
 
 ## Wie Tools vor MCP funktionierten
 
 Seit Mitte 2023 können Modelle Tools anfordern (*Function Calling*). Das Modell
 schreibt die strukturierte Bitte, und die Anwendung führt sie aus, genau wie auf
-[Seite 1](01-bausteine.md). Offen blieb die Frage, **wo das Tool eigentlich lebt**.
+[Seite 1](01-bausteine.md). Offen blieb die Frage, wo das **Tool eigentlich lebt**.
 
-**Die Antwort war, in der Anwendung selbst.** Wer Claude Desktop, ChatGPT und einer
+Die Antwort war, **in der Anwendung selbst**. Wer Claude Desktop, ChatGPT und einer
 IDE Zugriff auf GitHub geben wollte, musste die GitHub-Anbindung dreimal schreiben,
 jedes Mal im Format der jeweiligen Anwendung. Das hatte vier Folgen.
 
-- **Jede Anwendung hatte ihr eigenes Format.** ChatGPT-Plugins, LangChain-Tools,
+- Jede Anwendung hatte ihr **eigenes Format**. ChatGPT-Plugins, LangChain-Tools,
   IDE-Erweiterungen und eigene Function-Calling-Definitionen waren untereinander
   nicht austauschbar.
-- **Die Werkzeuge standen beim Bau der Anwendung fest.** Ein neues Tool bedeutete
+- Die Werkzeuge standen beim Bau der Anwendung **fest**. Ein neues Tool bedeutete
   eine neue Version der Anwendung.
-- **Der Anbieter eines Systems konnte nichts beisteuern.** GitHub konnte keine
+- Der Anbieter eines Systems konnte **nichts beisteuern**. GitHub konnte keine
   Anbindung ausliefern, die überall funktioniert, weil es kein „überall“ gab.
-- **Zugangsdaten und Tool-Code steckten mitten in der Anwendung**, verwoben mit dem
+- Zugangsdaten und Tool-Code steckten **mitten in der Anwendung**, verwoben mit dem
   Chat, dem Prompt und der Modellanbindung.
 
 === "Vorher baut jeder alles selbst"
@@ -72,8 +72,8 @@ jedes Mal im Format der jeweiligen Anwendung. Das hatte vier Folgen.
 
 Ende 2024 hat Anthropic MCP als offenen Standard veröffentlicht. Vorbild war das
 *Language Server Protocol* (LSP), mit dem Microsoft 2016 dasselbe Problem bei Editoren
-und Programmiersprachen gelöst hatte. **Inzwischen unterstützen es OpenAI, Google,
-Microsoft und praktisch alle Coding-Werkzeuge.** Seit Ende 2025 liegt es bei einer
+und Programmiersprachen gelöst hatte. Inzwischen unterstützen es **OpenAI, Google,
+Microsoft** und praktisch alle Coding-Werkzeuge. Seit Ende 2025 liegt es bei einer
 Stiftung unter dem Dach der Linux Foundation und gehört damit keinem einzelnen
 Anbieter.
 
@@ -88,8 +88,8 @@ Anbieter.
 !!! warning "Was MCP **nicht** löst"
     - **Gute Tools.** MCP sorgt dafür, dass das Handbuch ankommt, nicht dafür, dass es
       gut geschrieben ist (→ [Seite 6](06-mcp-was-zaehlt.md)).
-    - **Vertrauen.** Ein MCP-Server ist Code, der mit Rechten läuft. **Einen fremden
-      Server einzubinden ist wie fremde Software zu installieren.**
+    - **Vertrauen.** Ein MCP-Server ist Code, der mit Rechten läuft. Einen fremden
+      Server einzubinden ist wie **fremde Software** zu installieren.
     - **Kontext.** Jedes angebundene Tool belegt Platz im Kontextfenster
       (→ [Seite 2](02-harness.md)).
 
@@ -101,7 +101,7 @@ Anbieter.
 | **Resources** | die **Anwendung** entscheidet, was in den Kontext kommt | z. B. aktueller Screen als Bild, Layout-Spezifikation |
 | **Prompts** | der **Mensch** wählt sie aus (oft als Slash-Befehl) | z. B. `/tagesscreen` |
 
-**In der Praxis sind Tools mit Abstand am wichtigsten.** Unser Projekt nutzt nur
+In der Praxis sind Tools mit Abstand **am wichtigsten**. Unser Projekt nutzt nur
 Tools.
 
 ## Wie Harness und Server miteinander reden
@@ -115,7 +115,7 @@ Tools.
 | Bei uns | ✅ | Diskussionspunkt für später |
 
 !!! warning "Klassischer Anfängerfehler bei stdio"
-    **Bei stdio ist stdout der Protokollkanal.** Ein einziges `console.log("Debug")`
+    Bei stdio ist **stdout der Protokollkanal**. Ein einziges `console.log("Debug")`
     im Server schreibt Text mitten in den JSON-Strom, und die Verbindung bricht ab.
     **Logs gehören nach stderr** (`console.error`).
 
@@ -134,7 +134,7 @@ können.
     "result": { "serverInfo": { "name": "trmnl-demo" }, "capabilities": { "tools": {} } } }
 ```
 
-**2. Die Tool-Liste ist alles, was das Modell über unsere Tools erfährt.**
+**2. Die Tool-Liste** ist alles, was das Modell über unsere Tools erfährt.
 
 ```json
 → { "jsonrpc": "2.0", "id": 2, "method": "tools/list" }
@@ -160,14 +160,14 @@ können.
 
 Das Zod-Schema aus unserem Code wird automatisch in das `inputSchema` (JSON Schema)
 übersetzt. Der Harness übersetzt dieses Schema dann in das Format des jeweiligen
-Modell-Anbieters (→ Protokolle auf [Seite 3](03-pi-aufsetzen.md)). **Das Modell
-spricht nie direkt MCP, das tut nur der Harness.** In der Spezifikation heißt der
+Modell-Anbieters (→ Protokolle auf [Seite 3](03-pi-aufsetzen.md)). Das Modell
+spricht **nie direkt MCP**, das tut **nur der Harness**. In der Spezifikation heißt der
 Harness übrigens *Host*.
 
 ## Denselben Server in zwei Harnesses anbinden
 
-Jetzt schließt sich der Kreis zu [Seite 3](03-pi-aufsetzen.md). **Unser Server
-`trmnl-display` kommt in pi und in Claude Code, ohne eine Zeile Änderung.**
+Jetzt schließt sich der Kreis zu [Seite 3](03-pi-aufsetzen.md). Unser Server
+`trmnl-display` kommt **in pi und in Claude Code**, ohne eine Zeile Änderung.
 
 In pi steht er projektweit in `.pi/mcp.json`.
 
@@ -190,8 +190,8 @@ pi mcp add -l trmnl-display -- npx tsx server/src/mcp-server.ts
 ```
 
 `command` und `args` sagen pi, wie der Server als Kindprozess gestartet wird
-(Transport *stdio*, siehe oben). **`exposure: "direct"` sorgt dafür, dass das Modell
-die Tools wie eingebaute Werkzeuge sieht.** Der Standard wäre `codemode`. Dort
+(Transport *stdio*, siehe oben). `exposure: "direct"` sorgt dafür, dass das Modell
+die Tools **wie eingebaute Werkzeuge** sieht. Der Standard wäre `codemode`. Dort
 schreibt das Modell kleines JavaScript, das die Tools aufruft. Das spart Kontext
 (→ [Seite 2](02-harness.md)), ist für eine Demo aber weniger anschaulich.
 
@@ -201,7 +201,7 @@ Zum Vergleich der Befehl in Claude Code.
 claude mcp add trmnl-display -- npx tsx server/src/mcp-server.ts
 ```
 
-**Es ist derselbe Server mit derselben Startzeile**, nur in einem anderen Harness.
+Es ist **derselbe Server** mit derselben Startzeile, nur in einem **anderen Harness**.
 Das ist der Kern von MCP.
 
 ## Live
@@ -213,7 +213,7 @@ Das ist der Kern von MCP.
     ```
     Im Browser **Connect** klicken, den Tab **Tools** öffnen und `get_weather` mit
     Koordinaten aufrufen. Dabei die Nachrichten im History-Bereich zeigen, denn sie
-    sind genau das JSON von oben. **Das ist ein MCP-Server ganz ohne KI.** Das Modell
+    sind genau das JSON von oben. Das ist ein MCP-Server **ganz ohne KI**. Das Modell
     ist nur ein weiterer Client.
 
 !!! example "Denselben Server in beiden Harnesses zeigen"
