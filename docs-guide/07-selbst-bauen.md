@@ -1,15 +1,15 @@
 # 7 · Selbst bauen
 
-In der ersten Session ging es ums Verstehen, jetzt bauen wir. **Das Fundament und das
-erste Tool entstehen von Hand**, damit jede Zeile verstanden ist. **Alle weiteren
-Tools baut der Harness aus unseren Spezifikationen.** So arbeitet man heute mit
+In der ersten Session ging es ums Verstehen, jetzt bauen wir. Das Fundament und das
+erste Tool entstehen **von Hand**, damit jede Zeile verstanden ist. Alle weiteren
+Tools baut **der Harness** aus unseren Spezifikationen. So arbeitet man heute mit
 Agenten. Der Mensch legt fest, *was* entstehen soll, der Agent schreibt den Code, und
 der Mensch prüft.
 
 Ausgangspunkt sind die Spezifikationen in `docs-dev/` (vor allem
 [03](../docs-dev/03-mcp-tool-spezifikation.md) und
 [07](../docs-dev/07-weitere-mcp-tools.md)), dazu Node.js und Claude Code oder pi.
-**Code gibt es noch keinen.**
+Code gibt es **noch keinen**.
 
 | Schritt | Wer baut? |
 |---|---|
@@ -52,8 +52,8 @@ void serveStdio(() => server);
 console.error('trmnl-display läuft auf stdio');
 ```
 
-**Mehr braucht es nicht, nämlich einen Namen, eine Beschreibung, ein Schema und eine
-Funktion.** Das sind die vier Teile aus [Seite 1](01-bausteine.md) in 15 Zeilen.
+**Mehr braucht es nicht**, nämlich einen Namen, eine Beschreibung, ein Schema und eine
+Funktion. Das sind die vier Teile aus [Seite 1](01-bausteine.md) in 15 Zeilen.
 
 ## Schritt 2 · Starten und prüfen
 
@@ -66,15 +66,15 @@ Im Browser **Connect** und dann **Tools** wählen und `hello` mit einem Namen au
 ??? question "Was passiert, wenn wir `console.error` durch `console.log` ersetzen?"
     **Die Verbindung bricht ab.** Bei stdio ist stdout der Protokollkanal
     (→ [Seite 4](04-mcp-grundlagen.md)), und `console.log` schreibt Text mitten in den
-    JSON-Strom. Einmal ausprobieren lohnt sich, denn **diesen Fehler macht jeder genau
+    JSON-Strom. Einmal ausprobieren lohnt sich, denn diesen Fehler macht **jeder genau
     einmal**.
 
 ## Schritt 3 · Das Schema von `get_weather` durchgehen
 
-**Das erste echte Tool bauen wir von Hand.** Den Code (Logik in `lib/weather.ts`,
+Das erste echte Tool bauen wir **von Hand**. Den Code (Logik in `lib/weather.ts`,
 Hülle in `tools/getWeather.ts`) übernehmen wir aus der
 [Bauanleitung](../docs-dev/anleitung.md), Phase 3 Teil A, und gehen ihn gemeinsam
-durch. **Wichtiger als der Code sind die Entscheidungen dahinter.**
+durch. Wichtiger als der Code sind die **Entscheidungen dahinter**.
 
 Die Wetterdaten kommen von [Open-Meteo](https://open-meteo.com), frei und ohne
 API-Key. So sieht die Antwort roh aus.
@@ -96,24 +96,24 @@ curl "https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&curr
 
 ??? question "Warum `lat`/`lon` als Eingabe und nicht einfach den Städtenamen?"
     Ein Städtename bräuchte eine zweite API (Geocoding) und ist mehrdeutig, etwa
-    Frankfurt am Main oder an der Oder. **Zahlen kann das Schema prüfen**
-    (`min(-90).max(90)`), und die Koordinaten einer Stadt kennt jedes Modell. **Der
-    Preis ist, dass das Modell falsche Koordinaten schicken *könnte*, ohne dass das
-    Schema es merkt** (→ [Seite 6](06-mcp-was-zaehlt.md), Regel 2).
+    Frankfurt am Main oder an der Oder. Zahlen kann **das Schema prüfen**
+    (`min(-90).max(90)`), und die Koordinaten einer Stadt kennt jedes Modell. Der
+    Preis ist, dass das Modell **falsche Koordinaten** schicken *könnte*, ohne dass das
+    Schema es merkt (→ [Seite 6](06-mcp-was-zaehlt.md), Regel 2).
 
 ??? question "Welche Felder geben wir zurück?"
     ```json
     { "temperature": 17, "condition": "Bedeckt", "weatherCode": 3,
       "tempMin": 14, "tempMax": 24, "unit": "celsius", "fetchedAt": "…" }
     ```
-    - **`weather_code: 3` versteht das Modell nicht zuverlässig, „Bedeckt“ schon.**
+    - `weather_code: 3` versteht das Modell nicht zuverlässig, **„Bedeckt“ schon**.
       Die Übersetzung ist eine feste Tabelle und gehört in Code (Regel 4).
     - **Temperaturen sind gerundet**, denn auf dem Display steht „17°“ und nicht „17.0“.
-    - **`generationtime_ms`, `elevation` und `*_units` fliegen raus**, weil sie nur
+    - `generationtime_ms`, `elevation` und `*_units` **fliegen raus**, weil sie nur
       Ballast im Kontext wären.
 
 ??? question "Was passiert, wenn das Modell `lat: \"Berlin\"` schickt?"
-    **Der Aufruf erreicht unseren Code gar nicht.** Das Schema lehnt ihn ab, und das
+    Der Aufruf erreicht **unseren Code gar nicht**. Das Schema lehnt ihn ab, und das
     Modell bekommt eine Fehlermeldung, mit der es sich meist selbst korrigiert.
 
 ```ts
@@ -126,8 +126,8 @@ inputSchema: z.object({
 ## Schritt 4 · Die Beschreibung selbst schreiben
 
 Wir formulieren sie gemeinsam anhand der Fragen von [Seite 6](06-mcp-was-zaehlt.md).
-**Was tut es, und was kommt heraus? Woher kommen die Eingaben? Wann soll ich es
-nutzen und wann nicht?**
+Was tut es, und was kommt heraus? Woher kommen die Eingaben? Wann soll ich es
+nutzen und wann nicht?
 
 ??? question "Unser Vorschlag zum Vergleich"
     *„Liefert die aktuellen Wetterdaten (Temperatur, Wetterzustand als Text,
@@ -136,14 +136,14 @@ nutzen und wann nicht?**
     Display-Screen aktuelle Wetterinformationen enthalten soll. Ruft die kostenlose
     Open-Meteo-API auf, es wird kein API-Key benötigt.“*
 
-**Dann sofort ausprobieren.** Den Server in Claude Code oder pi anbinden
+Dann **sofort ausprobieren**. Den Server in Claude Code oder pi anbinden
 (→ [Seite 4](04-mcp-grundlagen.md#denselben-server-in-zwei-harnesses-anbinden)) und
 fragen *„Wie ist das Wetter in Hamburg?“* Findet das Modell das Tool? Setzt es die
 Koordinaten selbst ein?
 
 ## Schritt 5 · Den Rest baut der Harness
 
-**`get_weather` ist jetzt die Vorlage** für Aufbau, Fehlerbehandlung und die Trennung
+`get_weather` ist jetzt **die Vorlage** für Aufbau, Fehlerbehandlung und die Trennung
 von `lib/` und `tools/`. Der Agent orientiert sich daran. Der Auftrag an Claude Code
 oder pi lautet etwa so.
 
@@ -163,19 +163,19 @@ Nach demselben Muster gibt es je einen Auftrag pro Tool.
 | `get_joke`, `get_quote_of_the_day`, `get_on_this_day`, `get_http_status` als **zweiter Server** `tagesinhalte` | [docs-dev/07](../docs-dev/07-weitere-mcp-tools.md) | Rückgabe knapp? Weiche Trennstriche entfernt? |
 | `update_plugin` *(nur mit LaraPaper)* | docs-dev/07 | Plugin-UUIDs nur aus `.env`, nie im Schema? |
 
-**Unsere Rolle ist jetzt Review.** Stimmen Feldnamen und Beschreibung mit der
-Spezifikation überein? Hat der Agent etwas dazuerfunden? **Das geht deutlich
-schneller als selbst schreiben, und genau deshalb lohnt sich die Spezifikation
-vorher.**
+Unsere Rolle ist jetzt **Review**. Stimmen Feldnamen und Beschreibung mit der
+Spezifikation überein? Hat der Agent etwas dazuerfunden? Das geht **deutlich
+schneller** als selbst schreiben, und genau deshalb lohnt sich die Spezifikation
+vorher.
 
 !!! info "Wenn der Agent Fehler macht"
-    **Das ist kein Problem, sondern die Schleife aus [Seite 2](02-harness.md).** Die
+    Das ist **kein Problem**, sondern die Schleife aus [Seite 2](02-harness.md). Die
     Fehlermeldung aus dem Inspector oder vom Compiler zurück in den Chat geben. Meist
     behebt der Agent sie im nächsten Durchlauf.
 
 ## Schritt 6 · Testen und Spielereien
 
-**Erst jedes Tool einzeln im Inspector testen, dann alles zusammen mit dem Agenten.**
+Erst jedes Tool **einzeln** im Inspector testen, dann alles **zusammen** mit dem Agenten.
 
 ```text
 Mach mir den Screen für heute.
