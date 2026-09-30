@@ -8,17 +8,17 @@
 
 ## Was man danach verstanden hat
 
-1. **Was ein Harness ist** und warum er mindestens so wichtig ist wie das Modell.
-2. **Wie man einen eigenen Harness aufsetzt**, und zwar mit [pi](https://pi.dev),
+1. Was ein **Harness** ist und warum er mindestens so wichtig ist wie das Modell.
+2. Wie man einen **eigenen Harness** aufsetzt, und zwar mit [pi](https://pi.dev),
    wahlweise mit DeepSeek in der Cloud oder einem lokalen Modell über Ollama.
-3. **Was MCP ist.** Es ist der Standard, über den ein Agent Werkzeuge nutzt, egal
-   welches Modell dahintersteckt. Im Kern ist MCP eine Erweiterung bestehender
+3. Was **MCP** ist. Es ist der Standard, über den ein Agent Werkzeuge nutzt, egal
+   welches Modell dahintersteckt. Im Kern ist MCP eine **Erweiterung** bestehender
    Technik (APIs) und keine Revolution.
-4. **Worauf es bei einem MCP-Server wirklich ankommt**, gezeigt an den Tools
+4. Worauf es bei einem **MCP-Server** wirklich ankommt, gezeigt an den Tools
    `get_weather`, `get_date_info` und `render_weather_screen`.
-5. **Wo ein Agent sinnvoll ist und wo normaler Code besser ist** (→ Seite 6, Regel 4,
+5. Wo ein **Agent** sinnvoll ist und wo **normaler Code** besser ist (→ Seite 6, Regel 4,
    und Seite 9).
-6. **Wie man mit einem Agenten einen MCP-Server baut.** Das erste Tool entsteht von
+6. Wie man mit einem **Agenten** einen MCP-Server baut. Das erste Tool entsteht von
    Hand, den Rest baut der Harness aus der Spezifikation (→ Seite 7).
 
 ## Ablauf
@@ -35,7 +35,7 @@
 | 6 | [Was bei einem MCP-Server zählt](06-mcp-was-zaehlt.md) | Beschreibungen im Vergleich |
 
 !!! tip "Wenn die Zeit knapp wird"
-    **Der Kern sind die Seiten 1, 2, 4 und 6.** Seite 3 (pi) lässt sich auf „einmal
+    Der Kern sind die **Seiten 1, 2, 4 und 6**. Seite 3 (pi) lässt sich auf „einmal
     Modell wechseln“ kürzen und Seite 5 auf das Beispiel Seite an Seite.
 
 ### Session 2 · Bauen (eine Woche später)
@@ -46,7 +46,7 @@
 | 8 | [Der Ablauf vom Auftrag zum Display](08-ablauf.md) | Tagesscreen und Tagesplaylist, Harness und Modell im Vergleich, bewusst kaputt machen |
 | 9 | [Abschluss und Einordnung](09-abschluss.md) | Wann Agent, wann Code? Risiken, nächste Schritte |
 
-**Seite 8 ist ein Baukasten.** Je nachdem, wie weit wir auf Seite 7 kommen, zeigen
+Seite 8 ist ein **Baukasten**. Je nachdem, wie weit wir auf Seite 7 kommen, zeigen
 wir einzelne Akte daraus.
 
 ## Das Beispielprojekt in einem Bild
@@ -62,7 +62,7 @@ flowchart LR
 ```
 
 Der Auftrag lautet sinngemäß *„Mach mir den Screen für heute.“* **Das Modell
-entscheidet selbst, welche Tools es in welcher Reihenfolge aufruft.** Der Harness
+entscheidet selbst**, welche Tools es in welcher Reihenfolge aufruft. Der Harness
 führt die Aufrufe aus, und der MCP-Server erledigt die eigentliche Arbeit.
 
 ## Aufbau jeder Seite
