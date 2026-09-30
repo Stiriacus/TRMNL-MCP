@@ -2,9 +2,9 @@
 
 Auf [Seite 7](07-selbst-bauen.md) sind die Tools entstanden, jetzt arbeiten sie
 zusammen. Ein Satz im Chat, ein paar Tool-Aufrufe und am Ende ein fertiger Screen,
-**mit zwei Harnesses und mehreren Modellen, aber denselben MCP-Servern.**
+mit zwei Harnesses und mehreren Modellen, aber **denselben MCP-Servern.**
 
-**Die Seite ist ein Baukasten, in dem jeder Akt für sich steht.** Welche wir zeigen,
+Die Seite ist ein **Baukasten**, in dem jeder Akt für sich steht. Welche wir zeigen,
 hängt davon ab, wie weit Seite 7 gekommen ist.
 
 | Akt | Braucht |
@@ -30,7 +30,7 @@ Nur fürs echte Display braucht es zusätzlich Folgendes.
       Playlist, `update_plugin` ist gebaut
 - [ ] `refresh_rate` am Gerät steht für die Demo auf ca. 60 s
 
-**Ohne Display ist das Ergebnis das PNG unter `server/public/images/`.** Für alles,
+Ohne Display ist das Ergebnis das **PNG** unter `server/public/images/`. Für alles,
 was hier gezeigt wird, reicht das.
 
 ## Akt 1 · Der Tagesscreen (Claude Code)
@@ -44,10 +44,10 @@ Tagesscreen.
 Auf vier Dinge achten wir.
 
 1. **Die Reihenfolge.** Das Modell holt erst Wetter und Datum (oft parallel) und ruft
-   `render_weather_screen` zuletzt auf. **Das steht in keinem Code, sondern nur in den
+   `render_weather_screen` zuletzt auf. Das steht in keinem Code, sondern **nur in den
    Tool-Beschreibungen**, die wir auf Seite 7 geschrieben haben.
 2. **Die Koordinaten.** Im Auftrag steht „Berlin“, das Tool will `lat` und `lon`.
-   **Das Modell übersetzt selbst.**
+   Das Modell **übersetzt selbst.**
 3. **Die Tool-Ergebnisse** im Verlauf aufklappen. Das ist das JSON aus unserem Server.
 4. **Das Ergebnis.** Das PNG öffnen oder mit LaraPaper nach dem nächsten Refresh aufs
    Display schauen.
@@ -75,19 +75,19 @@ Geschichte und zum Abschluss ein Kaffee-Witz.
 
 Hier lohnt der Blick auf vier Punkte.
 
-- **Der Agent nutzt zwei Server gleichzeitig** (`tagesinhalte` und `trmnl-display`),
+- Der Agent nutzt **zwei Server gleichzeitig** (`tagesinhalte` und `trmnl-display`),
   die nichts voneinander wissen.
-- **Er ruft die Datenquellen parallel ab** und macht dann die Arbeit, die Code nicht
+- Er ruft die **Datenquellen parallel** ab und macht dann die Arbeit, die Code nicht
   kann, also auswählen, übersetzen und kürzen.
-- **Welches Geschichtsereignis wählt er, und warum?** Die Tool-Beschreibung bittet um
+- **Welches Geschichtsereignis** wählt er, und warum? Die Tool-Beschreibung bittet um
   „nicht belastend“.
-- **Ohne Display zeigt der Agent die Inhalte im Chat.** Mit LaraPaper befüllt er per
+- **Ohne Display** zeigt der Agent die Inhalte im Chat. Mit LaraPaper befüllt er per
   `update_plugin` die Plugins, und die Playlist rotiert bei jedem Refresh zum nächsten
   Screen.
 
 ## Akt 4 · Bewusst kaputt machen
 
-**Hier sieht man am deutlichsten, wie ein Agent „denkt“.** Nach jedem Versuch die
+Hier sieht man am deutlichsten, **wie ein Agent „denkt“.** Nach jedem Versuch die
 Änderung zurücknehmen.
 
 | # | Was wird kaputt gemacht? | Frage | Was man typischerweise sieht |
@@ -100,7 +100,7 @@ Hier lohnt der Blick auf vier Punkte.
 | 6 | Im Tool `get_on_this_day` die Bereinigung von `U+00AD` entfernen *(nur mit Display)* | Sieht man es auf dem Display? | Unsichtbare Zeichen zeigen, dass Daten aus APIs nie so sauber sind, wie sie aussehen |
 
 !!! warning "Der wichtigste Fall"
-    **Fall 2 zeigt, dass ein Agent, der fehlende Daten erfindet, gefährlich ist.** Die
+    Fall 2 zeigt, dass ein Agent, der fehlende Daten **erfindet**, **gefährlich** ist. Die
     Gegenmaßnahmen liegen im MCP-Server (klare Fehlertexte), im Prompt („erfinde
     nichts“) und in der Modellwahl.
 
