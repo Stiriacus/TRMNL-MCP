@@ -23,20 +23,33 @@ Festgelegt (siehe auch `README.md`, Abschnitt "Festgelegt"):
 - BYOS: Wir nutzen **LaraPaper** als vorhandene BYOS-Lösung, keinen eigenen
   BYOS-Server (Details in `06-recherche-trmnl.md`).
 - Datenquelle für den Screen: die **JokeAPI** (frei, ohne API-Key).
+- Wir rendern **kein Bild selbst**. Der MCP-Server überschreibt fertige Seiten
+  (static-Recipes) in LaraPaper über die Archiv-Schnittstelle. LaraPaper rendert sie
+  und zeigt sie in der Playlist an (siehe `06-recherche-trmnl.md`, Abschnitt 7.7).
 
 ---
 
 ## Phase 0 – Vorbereitung (ca. 30 Min.)
 
-1. Zugang zu deinem Server klären: SSH-Zugriff? Root-Rechte für die Installation
-   von Node.js/Playwright-Abhängigkeiten?
-2. Zugang zu LaraPaper prüfen: Weboberfläche erreichbar, API-Token mit den
-   nötigen Berechtigungen anlegbar (siehe `06-recherche-trmnl.md`).
-3. JokeAPI vom Server aus erreichbar? Einmal
-   `curl "https://v2.jokeapi.dev/joke/Programming?lang=de&safe-mode"` aufrufen.
+1. Zugang zu deinem Server klären: SSH-Zugriff? Darf dort Node.js installiert
+   werden?
+2. Zugang zu LaraPaper prüfen: Weboberfläche erreichbar? Unter den API-Tokens einen
+   **Sanctum-Token** anlegen. Für die Archiv-Schnittstelle ist keine besondere
+   Berechtigung nötig. Der Token ist trotzdem so viel wert wie ein Passwort, weil er
+   Seiten überschreiben kann.
+3. Archiv-Schnittstelle erreichbar? Einmal die Seitenliste abrufen:
 
-**Checkpoint:** Du kannst dich per SSH mit dem Server verbinden und erreichst
-die LaraPaper-Oberfläche.
+   ```bash
+   curl -H "Authorization: Bearer <token>" -H "Accept: application/json" \
+        https://<larapaper>/api/plugin_settings
+   ```
+
+   Erwartet: `{"data":[{"id":…,"name":…},…]}`. Ein `401` heißt: Token falsch.
+4. JokeAPI vom Server aus erreichbar? Einmal
+   `curl "https://v2.jokeapi.dev/joke/Programming?lang=de&safe-mode=true"` aufrufen.
+
+**Checkpoint:** Du erreichst die LaraPaper-Oberfläche, und `curl` liefert die
+Seitenliste und einen Witz.
 
 ---
 
@@ -307,19 +320,58 @@ Anschließend gemeinsamer Code-Review: Stimmen Feldnamen mit der Spezifikation
 versehentlich eine externe Bibliothek für reine Datumslogik verwendet (sollte
 laut Spezifikation nicht sein)?
 
-Gleiches Vorgehen für `render_joke_screen` – hier lohnt es sich, Claude Code zusätzlich
-`02-layout-spezifikation.md` lesen zu lassen:
+#### Vorbereitung: die Seite „Witz des Tages“ in LaraPaper anlegen
+
+`render_joke_screen` überschreibt eine bestehende Seite. Die muss es einmal geben,
+und zwar mit einer `trmnlp_id`. Seiten, die in der Oberfläche angelegt wurden, haben
+keine. Deshalb über die API anlegen:
+
+```bash
+curl -X POST -H "Authorization: Bearer <token>" -H "Accept: application/json" \
+     https://<larapaper>/api/plugin_settings
+# → {"data":{"id":"0199a3c2-…"}}
+```
+
+Die ID und die Zugangsdaten kommen in `server/.env` (nicht ins Git):
+
+```dotenv
+LARAPAPER_URL=https://<larapaper>
+LARAPAPER_TOKEN=<token>
+LARAPAPER_PAGE_WITZ=0199a3c2-…
+```
+
+Die Seite heißt vorerst „New TRMNLP Plugin“. Den richtigen Namen bekommt sie beim
+ersten Upload. Danach in der LaraPaper-Oberfläche **einmalig in die Playlist des
+Geräts aufnehmen**. Das geht nur dort, eine Playlist-API gibt es nicht.
+
+#### `render_joke_screen` bauen
+
+Gleiches Vorgehen wie bei `get_date_info`. Diesmal liest Claude Code zusätzlich die
+Layout-Spezifikation und den Abschnitt zur Archiv-Schnittstelle:
 
 ```text
-Lies docs-dev/02-layout-spezifikation.md und docs-dev/03-mcp-tool-spezifikation.md,
-Abschnitt "render_joke_screen". Erstelle server/src/lib/templates/screen.html als
-HTML/CSS-Vorlage nach dem dort beschriebenen Layout (Platzhalter fuer Setup,
-Pointe, Wochentag, Datum, KW; Sonderfall Einzeiler beachten). Erstelle danach server/src/lib/render.ts, das mit
-Playwright (bereits in package.json als Abhaengigkeit) die Vorlage mit echten
-Werten befuellt, als 800x480-PNG rendert, bei Bedarf mit sharp nachbearbeitet
-(Graustufen, Kompression) und unter server/public/images speichert. Erstelle
-zuletzt server/src/tools/renderJokeScreen.ts als MCP-Tool-Wrapper.
+Lies docs-dev/02-layout-spezifikation.md, docs-dev/03-mcp-tool-spezifikation.md
+(Abschnitt "render_joke_screen") und docs-dev/06-recherche-trmnl.md (Abschnitt 7.7).
+
+1. Erstelle server/templates/witz.blade.php nach dem Layout aus 02 mit den Klassen
+   des TRMNL-Frameworks. Texte nur ueber {{ $data['setup'] }} usw. ausgeben, nie
+   {!! !!}. Sonderfall Einzeiler (leere Pointe) beachten.
+2. Erstelle server/src/lib/larapaper.ts mit pushPage(plugin, data): Vorlage laden,
+   Revisionsmarke {{-- rev: <ISO-Zeit> --}} voranstellen, settings.yml bauen
+   (name, strategy: static, refresh_interval: 60, static_data als JSON-String),
+   beides mit fflate zu einem ZIP packen und per fetch als multipart-Feld "file" an
+   POST /api/plugin_settings/{id}/archive schicken. Header: Authorization Bearer und
+   Accept: application/json. URL, Token und IDs nur aus process.env.
+3. Erstelle server/src/tools/renderJokeScreen.ts als duennen MCP-Tool-Wrapper:
+   Texte kuerzen wie in 03 beschrieben, dann pushPage('witz', …).
 ```
+
+Danach `npm install fflate`. Beim Code-Review besonders prüfen:
+
+- Landet Text vom Modell irgendwo im Markup statt in `static_data`? Dann ist das ein
+  Sicherheitsfehler (Blade kann PHP ausführen), kein Schönheitsfehler.
+- Wird die Revisionsmarke bei **jedem** Aufruf neu gesetzt?
+- Stehen Token oder ID irgendwo im Code oder in der Tool-Rückgabe?
 
 ### Mit dem MCP Inspector testen (ohne KI)
 
@@ -336,8 +388,8 @@ Im geöffneten Browser-Tab: **Connect**, dann Tab **Tools**, jedes Tool einzeln 
 Testwerten aufrufen und die Rückgabe gegen `03-mcp-tool-spezifikation.md` prüfen.
 
 **Checkpoint:** `get_joke`, `get_date_info` und `render_joke_screen` laufen einzeln
-im Inspector und liefern plausible Ergebnisse; `render_joke_screen` erzeugt eine
-Datei unter `server/public/images/`.
+im Inspector und liefern plausible Ergebnisse. Nach `render_joke_screen` heißt die
+Seite in LaraPaper „Witz des Tages“, und ihre **Vorschau** zeigt den Testwitz.
 
 **Selbstcheck:**
 - Was passiert technisch zwischen Inspector-Klick und Tool-Antwort (welche
@@ -390,9 +442,8 @@ selbst auf `topic: "coffee"` und `lang: "en"` kommt und den Witz übersetzt.
   es zu früh aufruft (z. B. ohne Witz), ist das ein Hinweis auf eine zu
   unklare Tool-Beschreibung – Testfall für "Bewusst kaputt machen" weiter unten.
 
-**Checkpoint:** Ein vollständiges 800×480-PNG entsteht unter
-`server/public/images/`, mit korrektem Datum, korrekter KW und einem Witz aus der
-JokeAPI, sauber in Setup und Pointe getrennt.
+**Checkpoint:** Die Vorschau der Seite „Witz des Tages“ in LaraPaper zeigt korrektes
+Datum, korrekte KW und einen Witz aus der JokeAPI, sauber in Setup und Pointe getrennt.
 
 **Selbstcheck:**
 - Warum ruft der Agent die Tools in dieser Reihenfolge auf – steht das in den
@@ -410,8 +461,8 @@ JokeAPI, sauber in Setup und Pointe getrennt.
 
 > **Hinweis:** Wir nutzen LaraPaper als BYOS-Server. Der folgende Express-Server
 > ist nur zum Verständnis des Protokolls gedacht und wird für das Projekt nicht
-> benötigt. Wie der Agent Daten an LaraPaper übergibt, steht in
-> `06-recherche-trmnl.md` (Weg B: Webhook-Plugin).
+> benötigt. Wie der MCP-Server Seiten an LaraPaper übergibt, steht in
+> `06-recherche-trmnl.md` (Abschnitt 7.7) und in Phase 3 Teil B.
 
 `server/src/byos/server.ts` implementiert die drei Endpunkte aus dem Briefing
 (`GET /api/display`, `GET /api/setup`, `POST /api/log`) nach dem Terminus/TRMNL-
@@ -490,11 +541,34 @@ Test die aktuelle LaraPaper-Doku konsultieren.
 ### Screen auf Auftrag aktualisieren
 
 Es gibt bewusst **keine Zeitsteuerung**. Einen neuen Screen erzeugst du, indem du
-den Agenten beauftragst – genau wie in Phase 4. Das Gerät holt ihn beim nächsten
-Nachfragen (`refresh_rate`) ab.
+den Agenten beauftragst – genau wie in Phase 4. So läuft es dann ab:
 
-**Checkpoint:** Nach einem Agenten-Auftrag zeigt das Display spätestens nach einem
-Geräte-Refresh den Witz des Tages mit Datum und Kalenderwoche.
+1. Der Agent ruft `render_joke_screen` auf, der MCP-Server lädt die Seite hoch.
+2. Weil sich das Markup geändert hat (Revisionsmarke), verwirft LaraPaper das
+   gespeicherte Bild der Seite.
+3. Beim nächsten Geräte-Abruf, bei dem die Seite in der Playlist dran ist, rendert
+   LaraPaper sie neu und liefert sie aus.
+
+Wie lange das dauert, hängt an der Playlist: im ungünstigsten Fall Anzahl der Seiten ×
+Refresh-Intervall. Für die Live-Demo deshalb eine Playlist mit **nur der Witz-Seite**
+und ein kurzes Refresh-Intervall (z. B. 60 s) einstellen.
+
+**Checkpoint:** Nach einem Agenten-Auftrag zeigt das Display, sobald die Seite an der
+Reihe ist, den Witz des Tages mit Datum und Kalenderwoche.
+
+### Ausbau: Inhalte gezielt korrigieren
+
+Mit den Tools aus `07-weitere-mcp-tools.md` (`list_plugins`, `get_plugin`,
+`update_plugin`) kann der Agent einen Fehler auf dem Display selbst finden und
+beheben. Ein guter Demo-Auftrag:
+
+```text
+Auf dem Display steht beim Zitat "Unbekannt" als Autor. Prüf das und korrigier es,
+ohne den Rest der Seite zu ändern.
+```
+
+Beobachten: Liest der Agent die Seite erst mit `get_plugin`, bevor er schreibt? Ändert
+er wirklich nur den Autor?
 
 **Selbstcheck:**
 - Welcher Teil der Kette gehört zum Gerät (Polling über `refresh_rate`), welcher
@@ -513,9 +587,14 @@ Geräte-Refresh den Witz des Tages mit Datum und Kalenderwoche.
 | Inspector verbindet sich nicht | `console.log`-Aufruf im Server verunreinigt den stdio-Stream – auf `console.error` umstellen |
 | "Cannot find module '@modelcontextprotocol/server/stdio'" | Altes v1-Paket (`@modelcontextprotocol/sdk`) installiert, aber v2-Importpfad verwendet, oder umgekehrt – Paketname und Importpfade müssen zur installierten Version passen |
 | Zod-Validierungsfehler trotz "richtiger" Eingabe im Inspector | Zod-Version zwischen SDK-Peer-Dependency und installierter `zod`-Version inkompatibel (v2 des SDK erwartet Zod v4 über `zod/v4`) |
-| Playwright-Fehler "Executable doesn't exist" | Chromium für Playwright nicht installiert – `npx playwright install chromium` (auf manchen Servern zusätzlich Systemabhängigkeiten, siehe Playwright-Doku) |
-| PNG deutlich über dem Größenlimit | Zu viele Graustufen/Antialiasing im Rendering – Nachbearbeitung mit `sharp` (Graustufen-Palette) prüfen, siehe `05-fehler-und-fallbacks.md` |
-| Gerät zeigt altes Bild trotz neuem Render-Lauf | `filename` in der `/api/display`-Antwort hat sich nicht geändert – das Gerät nutzt den Dateinamen als Cache-Schlüssel und lädt sonst nicht neu |
+| Upload liefert `401` | Token falsch oder gelöscht, oder Header nicht als `Authorization: Bearer <token>` gesendet |
+| Upload liefert `302` bzw. eine HTML-Seite statt JSON | Header `Accept: application/json` fehlt. Laravel leitet dann bei Validierungsfehlern weiter, statt den Fehler zu melden |
+| Upload liefert `422` (*file must be a zip*) | Multipart-Feld heißt nicht `file`, oder Dateiname/Typ ist nicht `.zip` / `application/zip` |
+| Upload liefert `500` (mit `APP_DEBUG=true` als *Invalid ZIP structure* lesbar) | `settings.yml` oder `full.blade.php` fehlen im ZIP oder liegen in einem Unterordner (erlaubt sind nur der Wurzelordner und `src/`) |
+| Export liefert `404` | `trmnlp_id` in `.env` falsch, oder die Seite wurde in der Oberfläche angelegt und hat gar keine `trmnlp_id` |
+| Seite heißt nach dem Upload „Imported Plugin“ | `name` fehlt in `settings.yml` |
+| Upload erfolgreich, Display zeigt trotzdem den alten Witz | Entweder ist die Seite in der Playlist noch nicht wieder dran, oder die Revisionsmarke fehlt. Dann hat sich nur `static_data` geändert, und LaraPaper rendert erst nach `refresh_interval` Minuten neu |
+| Display zeigt leere Stellen statt Text | Schlüssel in `static_data` und `$data['…']` in der Vorlage passen nicht zusammen (siehe Konsistenz-Hinweis in `03`) |
 | `get_joke` meldet „Kein Witz zu diesem Stichwort“ | Stichwortsuche mit `lang=de` findet im kleinen deutschen Bestand fast nie etwas – `lang=en` verwenden |
 | Trotz `safe-mode` kommen Witze mit `"safe": false` | Parameter als `safe-mode=` (leerer Wert) gesendet, etwa über `searchParams.set('safe-mode', '')`. Die API ignoriert ihn dann. `safe-mode=true` oder `safe-mode` ohne `=` verwenden |
 | Witz zeigt `&szlig;` statt „ß“ | Kein Fehler: Bei Witz 14 ist das die Pointe. Nicht pauschal HTML-Entities dekodieren |
@@ -542,6 +621,10 @@ Dieser Abschnitt ist bewusst Teil der Anleitung, nicht optional – laut Lernstr
 4. **Timeout simulieren:** In `fetchJoke` das `AbortSignal.timeout(8000)` auf
    `AbortSignal.timeout(1)` setzen. Beobachten, ob der Fehlerpfad tatsächlich
    greift oder der Prozess stattdessen hängen bleibt.
+5. **Revisionsmarke weglassen:** In `pushPage` die Zeile mit `{{-- rev: … --}}`
+   auskommentieren und zwei Witze nacheinander pushen. Beobachten: Die LaraPaper-
+   Vorschau zeigt den neuen Witz, das Display aber weiter den alten. Warum? (Lösung:
+   `06-recherche-trmnl.md`, Abschnitt 7.2.)
 
 Für jedes Experiment: Ergebnis in `stolpersteine.md` festhalten, auch wenn nichts
 Überraschendes passiert – "wie erwartet" ist ebenfalls eine Erkenntnis.
@@ -556,6 +639,8 @@ Für jedes Experiment: Ergebnis in `stolpersteine.md` festhalten, auch wenn nich
   es konkret: Datum/KW = reine Logik im Tool, Auswahl/Übersetzung + Ablaufsteuerung = Modell.)
 - Wie sichert man MCP-Server ab, wenn sie über HTTP statt stdio erreichbar sind?
   (Stichwort Host-/Origin-Validierung, siehe Streamable-HTTP-Doku des SDK.)
+- Warum liefert das Modell nur Text und nie Markup? (LaraPaper rendert Blade, Blade
+  kann PHP ausführen. Die Grenze zwischen Daten und Code zieht der MCP-Server.)
 - Welche weiteren Tools wären denkbar? (Kalenderanbindung, Ticket-System,
   Serverstatus – die Tool-Vertrags-Struktur aus `03-mcp-tool-spezifikation.md`
   lässt sich direkt übertragen.)
