@@ -7,26 +7,22 @@ bevor du weitergehst).
 
 > **Versionsstand dieser Anleitung:** geprüft im September 2026 gegen Node.js 24 LTS
 > ("Krypton"), `@modelcontextprotocol/server` v2 (Paket-Split von `@modelcontextprotocol/sdk`),
-> Open-Meteo und die TRMNL/Terminus-BYOS-API. Vor dem eigentlichen Start lohnt ein
+> Open-Meteo und die TRMNL-BYOS-API (LaraPaper). Vor dem eigentlichen Start lohnt ein
 > kurzer Blick auf die aktuellen Quellen, falls seither Zeit vergangen ist:
 > [nodejs.org/en/download](https://nodejs.org/en/download),
 > [TypeScript-SDK-Repo](https://github.com/modelcontextprotocol/typescript-sdk),
 > [Open-Meteo-Doku](https://open-meteo.com/en/docs),
-> [Terminus-API-Doku](https://github.com/usetrmnl/terminus/blob/main/doc/api.adoc),
+> [LaraPaper](https://github.com/usetrmnl/larapaper),
 > [Awesome TRMNL](https://github.com/RJDvsFACe/awesome-trmnl) *(Linkziel vor Nutzung prüfen, Community-Listen ändern sich)*.
 
 ## Vor dem Start
 
-Diese Punkte solltest du klären, bevor du mit Phase 0 beginnst (siehe auch
-`README.md`, Abschnitt "Offene Punkte"):
+Festgelegt (siehe auch `README.md`, Abschnitt "Festgelegt"):
 
 - Diese Anleitung geht von **Windows** als Dev-Umgebung aus (PowerShell-Befehle).
-- Läuft auf deinem Server bereits eine BYOS-Lösung (z. B. Terminus), oder baust
-  du komplett neu auf Basis dieser Anleitung auf?
-- Koordinaten (Breite/Länge) des Standorts für die Wetterabfrage.
-- Welcher Harness und welches Modell den Agenten stellen (Claude Code mit Claude
-  als Standard; pi mit DeepSeek oder einem lokalen Ollama-Modell als Vergleich –
-  der MCP-Server bleibt dabei identisch).
+- BYOS: Wir nutzen **LaraPaper** als vorhandene BYOS-Lösung, keinen eigenen
+  BYOS-Server (Details in `06-recherche-trmnl.md`).
+- Koordinaten für die Wetterabfrage: **Ingolstadt**, Breite 48.7665, Länge 11.4258.
 
 ---
 
@@ -34,14 +30,13 @@ Diese Punkte solltest du klären, bevor du mit Phase 0 beginnst (siehe auch
 
 1. Zugang zu deinem Server klären: SSH-Zugriff? Root-Rechte für die Installation
    von Node.js/Playwright-Abhängigkeiten?
-2. Prüfen, ob dort schon eine BYOS-Software läuft (z. B. Terminus). Falls ja:
-   die dortige API-Doku mit `03-mcp-tool-spezifikation.md` und
-   `server/src/byos/server.ts` abgleichen, da Feldnamen leicht abweichen können.
-3. Koordinaten des Standorts notieren (z. B. über [openstreetmap.org](https://www.openstreetmap.org),
-   Rechtsklick → "Wo bin ich?"), in `server/.env` eintragen (siehe Phase 2).
+2. Zugang zu LaraPaper prüfen: Weboberfläche erreichbar, API-Token mit den
+   nötigen Berechtigungen anlegbar (siehe `06-recherche-trmnl.md`).
+3. Koordinaten von Ingolstadt (Breite 48.7665, Länge 11.4258) in `server/.env`
+   eintragen (siehe Phase 2).
 
-**Checkpoint:** Du kannst dich per SSH mit dem Server verbinden und kennst die
-Koordinaten deines Standorts.
+**Checkpoint:** Du kannst dich per SSH mit dem Server verbinden und erreichst
+die LaraPaper-Oberfläche.
 
 ---
 
@@ -374,7 +369,7 @@ claude mcp list
 Im Claude-Code-Chat, mit den echten Koordinaten aus `.env`:
 
 ```text
-Hole das aktuelle Wetter für Breitengrad 52.52 und Längengrad 13.41 sowie das
+Hole das aktuelle Wetter für Breitengrad 48.7665 und Längengrad 11.4258 sowie das
 heutige Datum. Schreibe danach eine Tagesmessage nach den Regeln aus
 docs-dev/04-prompt-design.md (max. 120 Zeichen, keine Emojis, passend zu Wetter und
 Datum). Rendere abschließend den Screen mit allen drei Werten.
@@ -407,6 +402,11 @@ einer zum Ton passenden Message.
 ## Phase 5 – Display anbinden (ca. 60 Min.)
 
 ### BYOS-Server bereitstellen
+
+> **Hinweis:** Wir nutzen LaraPaper als BYOS-Server. Der folgende Express-Server
+> ist nur zum Verständnis des Protokolls gedacht und wird für das Projekt nicht
+> benötigt. Wie der Agent Daten an LaraPaper übergibt, steht in
+> `06-recherche-trmnl.md` (Weg B: Webhook-Plugin).
 
 `server/src/byos/server.ts` implementiert die drei Endpunkte aus dem Briefing
 (`GET /api/display`, `GET /api/setup`, `POST /api/log`) nach dem Terminus/TRMNL-
@@ -471,19 +471,16 @@ Die Antwort sollte `image_url`, `filename` und `refresh_rate` enthalten (siehe
 
 ### Gerät auf den eigenen Server zeigen lassen
 
-Der genaue Weg hängt von der Firmware-Version und davon ab, ob bereits eine
-BYOS-Lösung (z. B. Terminus) auf dem Server läuft oder das Gerät neu eingerichtet
-wird. Grundsätzlich:
+Das Gerät meldet sich bei LaraPaper an. Der genaue Ablauf steht in
+`06-recherche-trmnl.md` (Abschnitt Seeed-Kit) und im LaraPaper-README. Grundsätzlich:
 
-1. Gerät ins WLAN bringen (Setup-Modus, siehe Gerätehandbuch).
-2. Server-URL (statt der TRMNL-Cloud-URL) im Setup hinterlegen.
-3. Ersten `/api/setup`-Aufruf im Server-Log beobachten – die dort erzeugte
-   `api_key` wird zum späteren `Access-Token`.
+1. In LaraPaper die automatische Geräteanmeldung erlauben ("Permit Auto-Join").
+2. Gerät ins WLAN bringen (Setup-Modus, siehe Gerätehandbuch) und als Server-URL
+   die LaraPaper-Adresse eintragen.
+3. Das Gerät erscheint danach in der LaraPaper-Oberfläche.
 
-Da sich Setup-Abläufe je nach Firmware/BYOS-Software unterscheiden: vor dem
-eigentlichen Test die aktuelle Doku der jeweils genutzten Lösung konsultieren
-(Terminus, `python-fastapi-trmnl-server`, Tiding, oder ein selbst gebauter
-Express-Server nach `03-mcp-tool-spezifikation.md`).
+Da sich Setup-Abläufe je nach Firmware-Version ändern können: vor dem eigentlichen
+Test die aktuelle LaraPaper-Doku konsultieren.
 
 ### Screen auf Auftrag aktualisieren
 

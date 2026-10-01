@@ -14,7 +14,7 @@ Code-Gerüst zum Auspacken.
 
 | Ordner | Zielgruppe | Zweck |
 |---|---|---|
-| `docs-guide/` | Vorgesetzte, Kolleg:innen | Erklär-Guide: Harness, MCP, pi, Live-Demo (Einstieg: `docs-guide/index.md`); später als statische Website über GitHub Pages |
+| `docs-guide/` | Vorgesetzte, Kolleg:innen | Erklär-Guide: Harness, MCP, pi, Live-Demo (Einstieg: `docs-guide/index.md`); online als Website: https://stiriacus.github.io/TRMNL-MCP/ |
 | `docs-dev/` | ich selbst | Bauanleitung und Spezifikationen für das Projekt |
 
 ## Inhalt docs-dev
@@ -38,11 +38,12 @@ Code-Gerüst zum Auspacken.
 ## Wichtiger Hinweis zu Versionen
 
 Die Inhalte wurden im September 2026 gegen die dann aktuellen Versionen geprüft
-(Node.js 24 LTS "Krypton", `@modelcontextprotocol/server` v2, Open-Meteo, TRMNL/Terminus-API).
+(Node.js 24 LTS "Krypton", `@modelcontextprotocol/server` v2, Open-Meteo, LaraPaper).
 MCP und das TRMNL-Ökosystem entwickeln sich weiter — vor dem eigentlichen Start lohnt sich
 ein kurzer Blick in die jeweils aktuelle Dokumentation (Links in `docs-dev/anleitung.md`).
 
 ## Festgelegt
 
-- BYOS: Wir nutzen die BYOS-Lösung einer anderen Plattform, keine eigene Neuentwicklung.
+- BYOS: Wir nutzen **LaraPaper** als BYOS-Lösung, keine eigene Neuentwicklung
+  (siehe `docs-dev/06-recherche-trmnl.md`).
 - Koordinaten für die Wetterabfrage: Ingolstadt, Breite 48.7665, Länge 11.4258
