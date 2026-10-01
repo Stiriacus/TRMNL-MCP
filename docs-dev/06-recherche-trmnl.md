@@ -287,12 +287,58 @@ erscheint, sobald der Eintrag wieder an der Reihe ist.
       bei 0.x. Die LaraPaper-Version festschreiben.
 - [ ] **Netz:** Ist `/mcp` von dort erreichbar, wo der Harness läuft (HTTPS, VPN)?
 
+### 7.7 Ohne LaraPaper-Änderung: Seiten per Archiv-Endpunkt pushen ⭐
+
+LaraPaper bietet die Schnittstelle der TRMNL-CLI `trmnlp` an (Sanctum-Token, **keine
+besondere Ability nötig**). Damit kann ein **eigener MCP-Server** ganze Seiten
+(Recipes) anlegen, auslesen und überschreiben:
+
+| Endpunkt | Wirkung |
+|---|---|
+| `GET /api/plugin_settings` | alle Plugins des Users: `id` (= `trmnlp_id`), `name` |
+| `POST /api/plugin_settings` | leeres Plugin anlegen, liefert eine neue `trmnlp_id` |
+| `GET /api/plugin_settings/{trmnlp_id}/archive` | Seite als ZIP herunterladen (auslesen) |
+| `POST /api/plugin_settings/{trmnlp_id}/archive` | ZIP hochladen (Feld `file`), **überschreibt die Seite** |
+| `DELETE /api/plugin_settings/{trmnlp_id}` | Seite löschen |
+
+ZIP-Inhalt, direkt im Wurzelordner oder in `src/`:
+
+```text
+settings.yml        # name, strategy: static, refresh_interval, static_data (JSON-String)
+full.blade.php      # oder full.liquid; optional shared.*, half_*.*, quadrant.*
+```
+
+Verhalten laut Code (`PluginImportService::importFromZip`):
+
+- `updateOrCreate` über `trmnlp_id`: Die Plugin-ID bleibt gleich, die Seite **bleibt in
+  ihrer Playlist**.
+- Ändert sich das Markup, leert der Model-Hook `current_image`. Die Seite wird dann neu
+  gerendert, sobald sie in der Rotation dran ist.
+- Ändert sich nur `static_data`, wird **nicht** sofort neu gerendert, sondern erst nach
+  `refresh_interval` Minuten (Standard 15). Abhilfe: Bei jedem Push eine
+  Revisionsmarke ins Markup schreiben (`{{-- rev 2026-10-01T09:00 --}}`), damit sich
+  das Markup ändert.
+- Ein Import **ersetzt alles**: Name, Strategie, alle Layouts und `static_data`. Was im
+  ZIP fehlt, ist danach leer. Der Push muss also immer die komplette Seite enthalten.
+- Plugins, die in der Oberfläche angelegt wurden, haben keine `trmnlp_id`. Seiten, die
+  der MCP-Server pflegen soll, legt man deshalb über `POST /api/plugin_settings` oder
+  einen ersten Import an und nimmt sie dann **einmalig in der Oberfläche** in die
+  Playlist auf.
+- Playlists selbst sind weiterhin nicht lesbar. Die Zuordnung „Seite ↔ Playlist“
+  läuft über eindeutige Namen.
+
+**Blade:** Das Template ist fester Bestandteil unseres MCP-Servers. Die Inhalte
+landen in `static_data` und werden mit `{{ $data['…'] }}` escapt ausgegeben. So kann
+kein Text vom Modell als Blade oder PHP ausgeführt werden.
+
 Gelesene Dateien: `routes/api.php`, `routes/web.php`, `routes/ai.php`,
 `app/Actions/Api/RunDeviceDisplayCycle.php`, `app/Jobs/GenerateScreenJob.php`,
 `app/Models/{Plugin,Playlist,PlaylistItem,Device}.php`,
 `app/Http/Controllers/Api/PluginWebhookController.php`,
 `app/Mcp/Servers/McpServer.php`, `app/Mcp/Tools/*`,
-`app/Mcp/Concerns/ResolvesUserRecipes.php`, `config/toggle.php`.
+`app/Mcp/Concerns/ResolvesUserRecipes.php`, `config/toggle.php`,
+`app/Http/Controllers/Api/{PluginArchiveController,PluginSettingsController,CompanionController}.php`,
+`app/Services/PluginImportService.php`.
 
 ## Quellen
 
