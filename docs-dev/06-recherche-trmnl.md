@@ -1,15 +1,22 @@
 # 06 – Recherche: LaraPaper, Plugins, Playlists und das Seeed-Kit
 
-Stand: 30.09.2026. Ziel: klären, ob der geplante Eigenbau (Express-BYOS + Playwright)
+Stand: 30.09.2026, ergänzt am 01.10.2026 (Abschnitt 7). Ziel: klären, ob der geplante Eigenbau (Express-BYOS + Playwright)
 nötig ist, oder ob der vorhandene BYOS-Server **LaraPaper** Rendering, Markup und
 Playlists schon mitbringt. Die API-Angaben unten stammen direkt aus dem Quellcode
 (`routes/api.php` und Controller), nicht nur aus der README.
 
-> **Kurzfassung:** LaraPaper rendert HTML/Blade/Liquid selbst zu Display-Bildern,
-> hat Plugins mit **Webhook-Strategie** und Playlists. Unser MCP-Server muss
-> deshalb **keine Bilder mehr rendern und keinen eigenen BYOS-Server betreiben**.
-> `render_joke_screen` wird zu einem einzigen HTTP-Aufruf an LaraPaper. Das bedeutet
-> weniger Code, weniger Fehlerquellen und ein klareres MCP-Beispiel.
+> **Kurzfassung:** LaraPaper rendert HTML/Blade/Liquid selbst zu Display-Bildern und
+> hat Plugins (Seiten) und Playlists. Unser MCP-Server muss deshalb **keine Bilder
+> mehr rendern und keinen eigenen BYOS-Server betreiben**.
+>
+> **Gewählter Weg (Abschnitt 7.7):** Der eigene MCP-Server lädt jede Seite als ZIP
+> (`settings.yml` mit `static_data` und eine feste Blade-Vorlage) über die
+> Archiv-Schnittstelle von LaraPaper hoch. `render_joke_screen` wird so zu einem
+> einzigen HTTP-Aufruf. LaraPaper wird dafür nicht verändert, sein eingebauter
+> MCP-Server wird nicht genutzt, es gibt keinen Webhook.
+>
+> Die Abschnitte 3 bis 5 halten die erste Analyse fest (Push und Webhook). Beide Wege
+> wurden nach der Quellcode-Analyse in Abschnitt 7 verworfen.
 
 ---
 
@@ -46,10 +53,22 @@ Für uns relevant:
   (Layouts `full`, `half_horizontal`, `half_vertical`, `quadrant`)
 - **Recipes**: 170+ aus dem Community-Katalog, 1000+ aus dem TRMNL-Katalog
 - **Playlists** pro Gerät: rotieren durch mehrere Plugins
-- **API**: Markup direkt pushen oder Plugin-Daten per Webhook aktualisieren
+- **API**: Markup direkt pushen, Plugin-Daten per Webhook aktualisieren oder ganze
+  Seiten als ZIP hoch- und herunterladen (Archiv-Schnittstelle, siehe 7.7)
 - **Device-Status**: Akku, WLAN, Firmware, also die Basis für `get_device_status`
 
-## 3. Zwei Wege, wie unser MCP-Server Inhalte aufs Display bringt
+## 3. Erste Analyse: zwei naheliegende Wege (verworfen)
+
+> **Nicht mehr aktuell.** Beide Wege wurden nach der Quellcode-Analyse verworfen:
+>
+> - **Weg A** hält bei aktiver Playlist nur einen Geräte-Abruf lang und rendert frei
+>   übergebenes Blade, also PHP (7.2, 7.5).
+> - **Weg B** ist kein „statischer“ Inhalt: Nach einem Webhook wird die Seite praktisch
+>   bei jedem Durchlauf neu gerendert, und die URL ist nur über die UUID geschützt
+>   (7.2).
+>
+> Gewählt ist der Archiv-Upload aus **7.7**. Die beiden Wege bleiben als Begründung
+> stehen.
 
 ### Weg A: Markup direkt pushen (sofort, ohne Plugin)
 
@@ -72,7 +91,7 @@ Content-Type: application/json
 > Der Endpunkt `POST /api/screens` ist für Geräte gedacht (Header `ID` = MAC,
 > `Access-Token`, Body `{"image": {"content": "…"}}`).
 
-### Weg B: Webhook-Plugin (Layout in LaraPaper, Daten vom Agenten) ⭐
+### Weg B: Webhook-Plugin (Layout in LaraPaper, Daten vom Agenten)
 
 1. In LaraPaper ein **Private Plugin** anlegen: Datenstrategie **Webhook**, Markup in
    Liquid, z. B.:
@@ -115,7 +134,7 @@ Content-Type: application/json
 
 3. Das Plugin in die **Playlist** des Geräts aufnehmen.
 
-**Warum Weg B für die Präsentation besser ist:** Er zeigt eine saubere Trennung der
+**Warum Weg B zunächst favorisiert war:** Er zeigt eine saubere Trennung der
 Zuständigkeiten.
 
 | Wer | Zuständig für |
@@ -127,6 +146,12 @@ Zuständigkeiten.
 Man kann das Layout in LaraPaper mit Live-Vorschau ändern, ohne dass der Agent oder
 der MCP-Server davon etwas mitbekommt.
 
+Die Trennung von Aussehen, Daten und Inhalt gilt beim gewählten Archiv-Upload (7.7)
+genauso. Einziger Unterschied: Die Blade-Vorlage liegt fest im MCP-Server
+(`server/templates/*.blade.php`) und wird bei jedem Upload mitgeschickt. Das Layout
+ändert man deshalb dort. Eine Änderung im LaraPaper-Editor überschreibt der nächste
+Upload.
+
 ## 4. Playlists
 
 Eine Playlist gehört zu einem Gerät und enthält geordnete Einträge (Plugins). Bei
@@ -136,23 +161,27 @@ zusätzlich auf Wochentage und Zeitfenster (`weekdays`, `active_from`,
 **keine Zeitsteuerung unseres Projekts**: Neue Inhalte entstehen weiterhin nur auf
 Auftrag.
 
-Mögliche Playlist für die Demo: **Witz des Tages** (unser Webhook-Plugin) →
-**ein Recipe aus dem Katalog** (z. B. Kalender) → wieder Witz des Tages.
+Mögliche Playlist für die Demo: **Witz des Tages** (unsere hochgeladene Seite) →
+**ein Recipe aus dem Katalog** (z. B. Kalender) → wieder Witz des Tages. Welche Seite
+in welcher Playlist steht, legt man nur in der Oberfläche fest. Eine Schnittstelle
+für Playlists gibt es nicht (7.4).
 
 ## 5. Was sich dadurch am Projekt ändert
 
 | Bisher (Plan in `anleitung.md`) | Mit LaraPaper |
 |---|---|
-| `render_joke_screen` → Playwright → PNG → `sharp` → Datei | `render_joke_screen` → `POST /api/custom_plugins/{uuid}` mit `merge_variables` |
+| `render_joke_screen` → Playwright → PNG → `sharp` → Datei | `render_joke_screen` → ZIP (`settings.yml` + `witz.blade.php`) → `POST /api/plugin_settings/{id}/archive` (7.7) |
 | Eigener Express-Server mit `/api/display`, `/api/setup`, `/api/log` | **entfällt**, das übernimmt LaraPaper |
 | PNG-Größenlimit, Graustufen, 1-px-Linien selbst prüfen | übernimmt LaraPaper und das TRMNL-Framework |
-| `02-layout-spezifikation.md` mit Pixelmaßen | wird zur Vorlage für das Liquid-Markup im Plugin |
-| `show_message` (optional) | `POST /api/display/update` mit Markup |
-| `get_device_status` (optional) | `GET /api/devices` bzw. `/api/display/status` |
+| `02-layout-spezifikation.md` mit Pixelmaßen | wird zur Grundlage der festen Blade-Vorlage `server/templates/witz.blade.php` |
+| `show_message` (optional) | Seite „nachricht“ per Archiv-Upload. Ein leerer Text blendet sie aus (`TRMNL_SKIP_DISPLAY`) |
+| `get_device_status` (optional) | `GET /api/devices` |
+| weitere Seiten (`07-weitere-mcp-tools.md`) | `update_plugin`, `list_plugins`, `get_plugin` über dieselbe Archiv-Schnittstelle |
 
-Die **Tool-Verträge** in `03-mcp-tool-spezifikation.md` (Namen, Beschreibungen,
-Eingabe-Schemas) bleiben fast gleich, nur die Rückgabe von `render_joke_screen` ändert
-sich (keine Datei/URL mehr). Für die Präsentation ist das ideal: *Der Vertrag zum
+Die **Tool-Verträge** in `03-mcp-tool-spezifikation.md` bleiben fast gleich: Name
+und Eingabe-Schema ändern sich nicht. Anders sind nur die Rückgabe von
+`render_joke_screen` (`plugin`, `status`, `rev`, `hint` statt Datei/URL) und ein Satz
+der Beschreibung (die Seite erscheint erst, wenn sie in der Playlist an der Reihe ist). Für die Präsentation ist das ideal: *Der Vertrag zum
 Modell ist stabil, die Implementierung dahinter ist austauschbar.*
 
 ## 6. Offene Punkte (vor der Umstellung prüfen)
@@ -164,9 +193,16 @@ Modell ist stabil, die Implementierung dahinter ist austauschbar.*
       nächsten Geräte-Abruf, sobald eine Playlist aktiv ist (siehe 7.2).
 - [ ] Welche `refresh_rate` ist am Gerät eingestellt? Für die Live-Demo kurz
       (z. B. 60 s) setzen, sonst wartet man ewig auf den Screen.
-- [ ] Liquid oder Blade für das Plugin? (Liquid ist portabel zur TRMNL-Cloud und zu
-      Recipes, Blade hat die [laravel-trmnl-blade](https://github.com/bnussbau/laravel-trmnl-blade)-Komponenten.)
-- [ ] Danach entscheiden: `docs-dev` (Anleitung Phase 3 + 5, `03`, `05`) auf LaraPaper umstellen
+- [x] ~~Liquid oder Blade für das Plugin?~~ **Blade.** Die Vorlage liegt fest im
+      MCP-Server, Inhalte kommen nur über `static_data` (7.7). Liquid wäre portabel zur
+      TRMNL-Cloud, Blade hat die [laravel-trmnl-blade](https://github.com/bnussbau/laravel-trmnl-blade)-Komponenten.
+- [x] ~~`docs-dev` auf LaraPaper umstellen~~ Erledigt: `01`, `02`, `03`, `05`, `07`
+      und die Anleitung beschreiben den Archiv-Upload.
+- [ ] **Am echten LaraPaper prüfen**, was bisher nur aus dem Quellcode stammt:
+      Leert die Revisionsmarke wirklich das gespeicherte Bild? Zeigt die Vorschau
+      dasselbe wie das Gerät? Blendet `TRMNL_SKIP_DISPLAY` die Seite aus? Bettet
+      LaraPaper das Blade-Markup selbst in `view view--full` ein, oder muss die Vorlage
+      das tun? Klappt der Upload mit einem Token ohne besondere Ability?
 
 ## 7. Push-Logik im Detail (Quellcode-Analyse, Stand 01.10.2026)
 
@@ -201,13 +237,17 @@ Das Gerät ruft `GET /api/display` auf. `RunDeviceDisplayCycle` entscheidet dann
 | `POST /api/display/update` (Push) | Markup → `Blade::render` → Bild direkt ans Gerät | Sofort beim nächsten Abruf. **Bei aktiver Playlist überschreibt der übernächste Abruf das Bild wieder.** Ein Push bleibt nur stehen, wenn keine Playlist aktiv ist. |
 | Webhook-Recipe | `POST /api/custom_plugins/{uuid}` schreibt `data_payload` | Sobald das Plugin wieder an der Reihe ist. `isDataStale()` heißt bei Webhooks „in der letzten Stunde aktualisiert“. Weil jedes Rendern den Zeitstempel auf jetzt setzt, wird das Plugin danach praktisch **bei jedem Durchlauf** neu gerendert. |
 | Polling-Recipe | LaraPaper holt `polling_url` selbst ab | Wenn `data_stale_minutes` abgelaufen ist (Standard 60) |
-| **Static-Recipe** | `data_payload` nur über die **Web-Oberfläche** (JSON-Feld im Recipe-Editor) oder den Import. **Es gibt keine API dafür.** | Beim Ändern des **Markups** sofort, weil ein Model-Hook dann `current_image` leert. Beim Ändern nur der **Daten** erst nach `data_stale_minutes`, weil der Hook nur auf Markup-Spalten reagiert. |
+| **Static-Recipe** | `data_payload` über die **Web-Oberfläche** (JSON-Feld im Recipe-Editor) oder den **Import einer ganzen Seite** (Archiv-Upload, 7.7). Einen Endpunkt nur für die Daten gibt es nicht. | Beim Ändern des **Markups** sofort, weil ein Model-Hook dann `current_image` leert. Beim Ändern nur der **Daten** erst nach `data_stale_minutes`, weil der Hook nur auf Markup-Spalten reagiert. |
 
 Wichtig für den „statischen“ Ansatz: Wer `data_payload` an der Oberfläche vorbei
 ändert, muss **selbst `current_image = null` setzen**. Sonst zeigt das Gerät bis zu
-`data_stale_minutes` lang den alten Inhalt.
+`data_stale_minutes` lang den alten Inhalt. Beim Archiv-Upload erledigt das die
+Revisionsmarke im Markup (7.7).
 
 ### 7.3 Der eingebaute MCP-Server von LaraPaper
+
+> **Wird nicht genutzt.** Entschieden ist ein eigener MCP-Server über die
+> Archiv-Schnittstelle (7.7). Der Abschnitt bleibt als Recherche-Ergebnis stehen.
 
 LaraPaper bringt schon einen MCP-Server mit (`routes/ai.php`):
 
@@ -230,6 +270,11 @@ Plugins vom Typ `recipe` sind sichtbar, eingebaute Plugin-Typen (Screenshot,
 Image-Webhook …) nicht.
 
 ### 7.4 Playlists: Es gibt keine Schnittstelle
+
+> **Entschieden:** LaraPaper wird nicht erweitert (7.6). Die Tool-Vorschläge unten
+> gelten nur für den Fall, dass sich das später ändert. Unser eigener MCP-Server
+> liest und korrigiert die **Seiten** (`list_plugins`, `get_plugin`, `update_plugin`
+> in `07-weitere-mcp-tools.md`). Playlists richtet man einmalig in der Oberfläche ein.
 
 Playlists existieren nur in der Livewire-Oberfläche (`playlists.index`). Es gibt
 weder REST-Endpunkte noch MCP-Tools dafür. Wer „Playlist wählen → Eintrag finden →
@@ -262,19 +307,25 @@ erscheint, sobald der Eintrag wieder an der Reihe ist.
   ändern lassen.** In Blade escapt `{{ $data['setup'] }}` die Ausgabe. Soll der Agent
   doch Markup bearbeiten, ist `markup_language: liquid` die sicherere Wahl, weil
   Liquid in einer Sandbox läuft.
-- Die Webhook-URL ist nur über die UUID geschützt (siehe Weg B).
+- **Der Token für die Archiv-Schnittstelle braucht keine besondere Ability.** Jeder
+  Sanctum-Token des Users kann also Seiten mit beliebigem Blade hochladen und damit
+  PHP ausführen. `LARAPAPER_TOKEN` in `server/.env` wie ein Server-Passwort behandeln:
+  nicht ins Repo, nicht in Prompts, nicht in Tool-Ergebnisse.
+- Unser MCP-Server schickt nur seine eigenen, festen Vorlagen. Text vom Modell landet
+  ausschließlich in `static_data` und wird mit `{{ }}` escapt.
+- (Nur Weg B, nicht genutzt: Die Webhook-URL ist nur über die UUID geschützt.)
 
 ### 7.6 Zu klären
 
-- [ ] **Darf LaraPaper erweitert werden?** Als Fork, lokaler Patch oder Upstream-PR?
-      Davon hängen Updates und Wartung ab.
-- [ ] **Wie viele MCP-Server?** Variante 1: LaraPaper-`/mcp` für Playlists und Inhalte,
-      dazu unser TS-Server für `get_joke` und `get_date_info`. Variante 2: alles
-      in LaraPaper (PHP). Beides lässt sich im Harness gleichzeitig verbinden.
-- [ ] **Inhalt in `data_payload` (empfohlen) oder im Markup?** Das bestimmt, ob
-      `update-recipe-data` nötig ist.
-- [ ] **Wer bekommt den Token?** Wegen Blade/PHP keinen Token an Agenten mit
-      ungeprüften Eingaben weitergeben.
+- [x] ~~**Darf LaraPaper erweitert werden?**~~ **Nein**, nicht auf die Schnelle. Der
+      Archiv-Upload (7.7) kommt ohne Änderung aus.
+- [x] ~~**Wie viele MCP-Server?**~~ Nur eigene TypeScript-Server (`trmnl-display`,
+      später `tagesinhalte`). Der LaraPaper-`/mcp` wird **nicht** genutzt.
+- [x] ~~**Inhalt in `data_payload` oder im Markup?**~~ In `static_data` (landet in
+      `data_payload`). Das Markup ist die feste Vorlage, plus Revisionsmarke.
+- [ ] **Wer bekommt den Token?** Wegen Blade/PHP und weil der Archiv-Token keine
+      Ability braucht: keinen Token an Agenten mit ungeprüften Eingaben weitergeben.
+      Der Token bleibt im MCP-Server, das Modell sieht ihn nie.
 - [ ] **Wie schnell muss eine Korrektur sichtbar sein?** Sie erscheint, sobald der
       Eintrag in der Rotation wieder dran ist (also Länge der Playlist ×
       `refresh_time`). Braucht es ein „jetzt anzeigen“? Ein Push hält bei aktiver
@@ -283,9 +334,11 @@ erscheint, sobald der Eintrag wieder an der Reihe ist.
       Inhalt überall. Ist das gewollt?
 - [ ] **Mashups** (mehrere Plugins auf einem Screen) mit abdecken oder vorerst
       ausklammern?
-- [ ] **Stabilität:** Der MCP-Server ist ein Lab-Feature und `laravel/mcp` steht noch
-      bei 0.x. Die LaraPaper-Version festschreiben.
-- [ ] **Netz:** Ist `/mcp` von dort erreichbar, wo der Harness läuft (HTTPS, VPN)?
+- [ ] **Stabilität:** Die Archiv-Schnittstelle ist für die CLI `trmnlp` gedacht und
+      nicht als öffentliche API dokumentiert. Die LaraPaper-Version festschreiben und
+      nach jedem Update den Upload einmal testen.
+- [ ] **Netz:** Ist LaraPaper (`/api/plugin_settings`) von dort erreichbar, wo der
+      MCP-Server läuft (HTTPS, VPN)?
 
 ### 7.7 Ohne LaraPaper-Änderung: Seiten per Archiv-Endpunkt pushen ⭐
 
@@ -316,10 +369,17 @@ Verhalten laut Code (`PluginImportService::importFromZip`):
   gerendert, sobald sie in der Rotation dran ist.
 - Ändert sich nur `static_data`, wird **nicht** sofort neu gerendert, sondern erst nach
   `refresh_interval` Minuten (Standard 15). Abhilfe: Bei jedem Push eine
-  Revisionsmarke ins Markup schreiben (`{{-- rev 2026-10-01T09:00 --}}`), damit sich
-  das Markup ändert.
+  Revisionsmarke ins Markup schreiben (`{{-- rev: 2026-10-01T09:00:12Z --}}`), damit
+  sich das Markup ändert.
 - Ein Import **ersetzt alles**: Name, Strategie, alle Layouts und `static_data`. Was im
   ZIP fehlt, ist danach leer. Der Push muss also immer die komplette Seite enthalten.
+  Fehlt `name` in `settings.yml`, heißt die Seite danach „Imported Plugin“.
+- Steht `"TRMNL_SKIP_DISPLAY": true` in `static_data`, überspringt die Playlist die
+  Seite. So blendet man eine Seite aus, ohne die Playlist anzufassen.
+- Immer `Accept: application/json` mitschicken. Sonst antwortet Laravel bei
+  Validierungsfehlern mit einer Weiterleitung (302) statt mit 422 und einer Meldung.
+- Ein Fehler im Blade-Markup fällt erst beim Rendern auf. Das Gerät zeigt dann ein
+  Fehlerbild mit dem Namen der Seite.
 - Plugins, die in der Oberfläche angelegt wurden, haben keine `trmnlp_id`. Seiten, die
   der MCP-Server pflegen soll, legt man deshalb über `POST /api/plugin_settings` oder
   einen ersten Import an und nimmt sie dann **einmalig in der Oberfläche** in die
@@ -343,7 +403,8 @@ Gelesene Dateien: `routes/api.php`, `routes/web.php`, `routes/ai.php`,
 ## Quellen
 
 - [LaraPaper – GitHub](https://github.com/usetrmnl/larapaper) (README, `routes/api.php`,
-  `DisplayUpdateController`, `PluginWebhookController`, `Models/Playlist.php`)
+  `DisplayUpdateController`, `PluginWebhookController`, `Models/Playlist.php`,
+  `PluginArchiveController`, `PluginImportService`)
 - [Seeed Studio – TRMNL 7,5" DIY Kit](https://wiki.seeedstudio.com/trmnl_7inch5_diy_kit_main_page/)
 - [TRMNL – Screen Templating / Design Framework](https://docs.trmnl.com/go/private-plugins/templates)
 - [TRMNL – Webhooks für Private Plugins](https://docs.trmnl.com/go/private-plugins/webhooks)

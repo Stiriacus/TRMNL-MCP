@@ -3,10 +3,12 @@
 ## Ziel
 
 Ein Agent holt einen Witz aus der JokeAPI und das aktuelle Datum, wählt den Witz
-aus, überträgt ihn bei Bedarf ins Deutsche, bringt ihn auf Display-Länge und rendert
-daraus einen „Witz des Tages“-Screen (800×480 px), den ein TRMNL E-Ink-Display
-anzeigt. Datenbeschaffung und Rendering laufen als **MCP-Tools** –
-der Agent entscheidet selbst, wann er welches Tool aufruft.
+aus, überträgt ihn bei Bedarf ins Deutsche, bringt ihn auf Display-Länge und lädt
+ihn als Seite „Witz des Tages“ nach LaraPaper hoch. LaraPaper rendert daraus den
+Screen (800×480 px), den ein TRMNL E-Ink-Display anzeigt. Datenbeschaffung und
+Upload laufen als **MCP-Tools** – der Agent entscheidet selbst, wann er welches Tool
+aufruft. LaraPaper selbst wird dafür nicht verändert, und sein eingebauter MCP-Server
+wird nicht genutzt (siehe `06-recherche-trmnl.md`, Abschnitt 7.7).
 
 ## Kontext
 
@@ -33,8 +35,8 @@ Seite, bis der Agent sie überschreibt.
 Innerhalb eines Agenten-Laufs gilt trotzdem die Frage aus dem Briefing "Wo lohnt
 sich ein Agent, wo reicht klassischer Code?": Datum und Kalenderwoche sind reine
 Logik, Witzabruf und Upload sind deterministische API-Aufrufe – deshalb
-stecken sie als Code in den Tools. Das Rendern übernimmt LaraPaper. Nur Auswahl, Übersetzung und Kürzen des Witzes
-und die Entscheidung, welches Tool wann aufgerufen wird, übernimmt das Sprachmodell.
+stecken sie als Code in den Tools. Das Rendern übernimmt LaraPaper. Nur Auswahl,
+Übersetzung und Kürzen des Witzes und die Entscheidung, welches Tool wann aufgerufen wird, übernimmt das Sprachmodell.
 
 ```
                        ┌─────────────────────────┐
@@ -55,7 +57,7 @@ und die Entscheidung, welches Tool wann aufgerufen wird, übernimmt das Sprachmo
                        └───────────┬─────────────┘
                                    │ HTTP (Polling)
                        ┌───────────▼─────────────┐
-                       │   TRMNL-Display          │
+                       │   TRMNL-Display         │
                        └─────────────────────────┘
 ```
 
@@ -76,9 +78,11 @@ Details zu Ein-/Ausgabe und Fehlerfällen: siehe `03-mcp-tool-spezifikation.md`.
 1. Agent ruft `get_joke` und `get_date_info` auf.
 2. Agent wählt den Witz aus, überträgt ihn bei Bedarf ins Deutsche und kürzt ihn
    nach den Regeln aus `04-prompt-design.md`.
-3. Agent ruft `render_joke_screen` mit den gesammelten Daten auf.
-4. Das Display holt sich beim nächsten Wake-Cycle das fertige Bild über
-   `GET /api/display` ab.
+3. Agent ruft `render_joke_screen` mit den gesammelten Daten auf. Das Tool lädt die
+   Seite als ZIP nach LaraPaper hoch und überschreibt die vorhandene Seite.
+4. Das Display fragt bei jedem Wake-Cycle `GET /api/display` bei LaraPaper an. Ist
+   die Seite in der Playlist an der Reihe, rendert LaraPaper sie neu und liefert das
+   Bild aus. Bis dahin zeigt das Display weiter die anderen Seiten der Playlist.
 
 ## Wichtige Designentscheidungen aus dem Briefing
 
@@ -96,7 +100,7 @@ Details zu Ein-/Ausgabe und Fehlerfällen: siehe `03-mcp-tool-spezifikation.md`.
     (Claude Code, MCP Inspector).
   - **Streamable HTTP** – Server läuft dauerhaft, mehrere Clients können sich
     verbinden. Für dieses Projekt nicht zwingend nötig, aber relevant für die
-    Diskussion in der Session (siehe unten).
+    Diskussion in der Session.
 - **MCP ist modellunabhängig.** Jeder MCP-fähige Client kann den Server nutzen –
   Claude Code oder ein Harness mit einem anderen Modell (z. B. DeepSeek). Guter
   Diskussionspunkt für die gemeinsame Session.
@@ -107,5 +111,7 @@ Details zu Ein-/Ausgabe und Fehlerfällen: siehe `03-mcp-tool-spezifikation.md`.
 - `03-mcp-tool-spezifikation.md` – Tool-Verträge (Schema, Rückgabe, Fehlerfälle)
 - `04-prompt-design.md` – Regeln und Prompt-Vorlage für den Witz des Tages
 - `05-fehler-und-fallbacks.md` – Ausfallszenarien und Systemverhalten
+- `06-recherche-trmnl.md` – LaraPaper-Recherche, Push-Logik und Archiv-Schnittstelle
+- `07-weitere-mcp-tools.md` – weitere Tools, Tagesplaylist und gezielte Korrektur
 - `anleitung.md` – Schritt-für-Schritt-Anleitung entlang der Phasen 0–5
 - `stolpersteine.md` – Lernlog, während der Arbeit auszufüllen

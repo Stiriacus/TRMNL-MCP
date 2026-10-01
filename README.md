@@ -30,11 +30,13 @@ Code-Gerüst zum Auspacken.
 | `docs-dev/anleitung.md` | Schritt-für-Schritt-Anleitung (Phase 0–5), Windows, mit Codebeispielen |
 | `docs-dev/stolpersteine.md` | Leeres Lernlog zum Ausfüllen während der Arbeit |
 | `docs-dev/06-recherche-trmnl.md` | Recherche: LaraPaper (Push-Logik im Quellcode, Archiv-Schnittstelle für Seiten, Playlists), Seeed-Kit |
-| `docs-dev/07-weitere-mcp-tools.md` | Weitere Tools (HTTP-Status, Zitat, Geschichte) und Tagesplaylist |
+| `docs-dev/07-weitere-mcp-tools.md` | Weitere Tools (HTTP-Status, Zitat, Geschichte), Tagesplaylist und gezielte Korrektur (`list_plugins`, `get_plugin`) |
 
 **Empfohlene Lesereihenfolge:** `01-projektuebersicht.md` → `02-layout-spezifikation.md`
 → `03-mcp-tool-spezifikation.md` → `04-prompt-design.md` → `05-fehler-und-fallbacks.md`
-→ `anleitung.md`. Das `stolpersteine.md` wird begleitend während der Arbeit geführt.
+→ `anleitung.md`. `06-recherche-trmnl.md` erklärt, warum die Seiten so nach LaraPaper
+kommen, `07-weitere-mcp-tools.md` ist der Ausbau. Das `stolpersteine.md` wird
+begleitend während der Arbeit geführt.
 
 ## Wichtiger Hinweis zu Versionen
 
@@ -49,3 +51,13 @@ ein kurzer Blick in die jeweils aktuelle Dokumentation (Links in `docs-dev/anlei
   (siehe `docs-dev/06-recherche-trmnl.md`).
 - Datenquelle: **JokeAPI** statt Wetter-API (Open-Meteo). Der Witz des Tages ist
   das Beispielprojekt, Tool-Verträge in `docs-dev/03-mcp-tool-spezifikation.md`.
+- Anzeige: Der **eigene MCP-Server** (TypeScript) lädt jede Seite als ZIP
+  (`settings.yml` + feste Blade-Vorlage) über die Archiv-Schnittstelle von LaraPaper
+  hoch (`POST /api/plugin_settings/{id}/archive`). Die Inhalte stehen als
+  `static_data` in der Seite, LaraPaper rendert sie und zeigt sie in der Playlist
+  (siehe `docs-dev/06-recherche-trmnl.md`, Abschnitt 7.7).
+- **Keine Änderung an LaraPaper** und **nicht** der eingebaute MCP-Server von
+  LaraPaper. Kein Webhook, kein `POST /api/display/update`, kein eigenes Rendern
+  (Playwright/PNG).
+- Playlists richtet man **einmalig in der LaraPaper-Oberfläche** ein, dafür gibt es
+  keine Schnittstelle. Korrigiert wird per MCP über die Seiten selbst.

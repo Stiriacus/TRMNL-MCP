@@ -465,9 +465,9 @@ Datum, korrekte KW und einen Witz aus der JokeAPI, sauber in Setup und Pointe ge
 > `06-recherche-trmnl.md` (Abschnitt 7.7) und in Phase 3 Teil B.
 
 `server/src/byos/server.ts` implementiert die drei Endpunkte aus dem Briefing
-(`GET /api/display`, `GET /api/setup`, `POST /api/log`) nach dem Terminus/TRMNL-
-Protokoll. Minimalversion als Ausgangspunkt (Feldnamen wie in
-`03-mcp-tool-spezifikation.md`, Zusatzfelder je nach genutzter BYOS-Doku prüfen):
+(`GET /api/display`, `GET /api/setup`, `POST /api/log`) nach dem TRMNL-BYOS-Protokoll.
+Minimalversion als Ausgangspunkt (Zusatzfelder je nach Firmware-Version in der
+TRMNL-BYOS-Doku prüfen):
 
 ```ts
 import express from 'express';
@@ -522,8 +522,9 @@ Kurzer Funktionstest ohne Gerät (PowerShell – `curl` ist hier ein Alias für
 Invoke-RestMethod -Uri "http://localhost:3000/api/display" -Headers @{ "Access-Token" = "<dein BYOS_DEVICE_ACCESS_TOKEN>" }
 ```
 
-Die Antwort sollte `image_url`, `filename` und `refresh_rate` enthalten (siehe
-`03-mcp-tool-spezifikation.md` und den Terminus-API-Referenz-Link oben).
+Die Antwort sollte `image_url`, `filename` und `refresh_rate` enthalten. Genau diese
+Antwort erzeugt im Projekt LaraPaper (`RunDeviceDisplayCycle`, siehe
+`06-recherche-trmnl.md`, Abschnitt 7.1).
 
 ### Gerät auf den eigenen Server zeigen lassen
 
