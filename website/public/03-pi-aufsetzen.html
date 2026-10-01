@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>3 · Eigenen Harness aufsetzen mit pi · KI-Agenten selbst bauen</title>
+  <meta name="description" content="pi ist ein bewusst minimaler, quelloffener Coding-Agent-Harness für das Terminal. Seine Philosophie lautet „Adapt Pi to your workflows, not the other way around.“">
+  <meta name="theme-color" content="#2a1b12">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23dcc07a%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23b0643a%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22url(%23g)%22%2F%3E%3Ctext%20x%3D%2216%22%20y%3D%2222%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2217%22%20font-weight%3D%22700%22%20fill%3D%22%232a1b12%22%3EK%3C%2Ftext%3E%3C%2Fsvg%3E">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="assets/js/main.js" defer></script>
+</head>
+<body data-page="03-pi-aufsetzen" data-mermaid="assets/vendor/mermaid.min.js">
+  <header class="topbar">
+    <button class="icon-btn nav-toggle" type="button" aria-label="Navigation öffnen" aria-expanded="false" aria-controls="sidebar">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </button>
+    <a class="brand" href="index.html">
+      <span class="brand-mark">K</span>
+      <span><span class="brand-title">KI-Agenten selbst bauen</span><span class="brand-sub">Harness · MCP · E-Ink</span></span>
+    </a>
+    <span class="topbar-spacer"></span>
+    <span class="progress" aria-hidden="true"></span>
+  </header>
+  <div class="scrim" aria-hidden="true"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <nav aria-label="Seiten">
+      <div class="nav-group">
+        <p class="nav-group-title">Start</p>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="index.html"><span class="nav-num">◆</span><span>Übersicht</span></a></li>
+        </ul>
+      </div>
+      <div class="nav-group">
+        <p class="nav-group-title">Session 1 · Verstehen</p>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="01-bausteine.html"><span class="nav-num">1</span><span>Die Bausteine</span></a></li>
+          <li><a class="nav-link" href="02-harness.html"><span class="nav-num">2</span><span>Wie ein Harness funktioniert</span></a></li>
+          <li><a class="nav-link" href="03-pi-aufsetzen.html" aria-current="page"><span class="nav-num">3</span><span>Eigenen Harness aufsetzen mit pi</span></a></li>
+          <li><a class="nav-link" href="04-mcp-grundlagen.html"><span class="nav-num">4</span><span>MCP verstehen</span></a></li>
+          <li><a class="nav-link" href="05-api-zu-mcp.html"><span class="nav-num">5</span><span>Von der API zum MCP-Server</span></a></li>
+          <li><a class="nav-link" href="06-mcp-was-zaehlt.html"><span class="nav-num">6</span><span>Was bei einem MCP-Server wirklich zählt</span></a></li>
+        </ul>
+      </div>
+      <div class="nav-group">
+        <p class="nav-group-title">Session 2 · Bauen</p>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="07-selbst-bauen.html"><span class="nav-num">7</span><span>Selbst bauen</span></a></li>
+          <li><a class="nav-link" href="08-ablauf.html"><span class="nav-num">8</span><span>Der Ablauf vom Auftrag zum Display</span></a></li>
+          <li><a class="nav-link" href="09-abschluss.html"><span class="nav-num">9</span><span>Abschluss und Einordnung</span></a></li>
+        </ul>
+      </div>
+      </nav>
+    </aside>
+    <main class="content">
+      <article class="article">
+<h1><span class="h1-num">3</span>Eigenen Harness aufsetzen mit pi</h1>
+<p class="lead"><strong>Harness</strong> und <strong>Modell</strong> sind getrennte Entscheidungen. Mit pi wechseln wir zwischen
+einem Cloud-Modell (DeepSeek) und einem lokalen Modell (Ollama), und der
+MCP-Server bleibt dabei <strong>unverändert</strong>. Wie er angebunden wird, zeigt
+<a href="04-mcp-grundlagen.html#denselben-server-in-zwei-harnesses-anbinden">Seite 4</a>.</p>
+<hr class="lead-rule">
+<p><a href="https://pi.dev" target="_blank" rel="noopener">pi</a> ist ein bewusst minimaler, quelloffener Coding-Agent-Harness für
+das Terminal. Seine Philosophie lautet <em>„Adapt Pi to your workflows, not the other
+way around.“</em></p>
+<h2 id="schritt-1-installieren" data-title="Schritt 1 · Installieren">Schritt 1 · Installieren<a class="heading-anchor" href="#schritt-1-installieren" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<div class="code-block"><span class="code-lang">bash</span><pre><code class="hljs language-bash"><span class="sh-cmd">npm</span> <span class="sh-sub">install</span> <span class="sh-flag">-g</span> <span class="sh-flag">--ignore-scripts</span> <span class="sh-pkg">@earendil-works/pi-coding-agent</span>
+<span class="sh-cmd">pi</span></code></pre></div>
+<p>Alles, was pi konfiguriert, liegt an zwei Orten.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Ort</th>
+<th>Gilt für</th>
+<th>Inhalt</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>~/.pi/agent/</code></td>
+<td>alle Projekte</td>
+<td><code>models.json</code>, <code>mcp.json</code>, <code>auth.json</code>, <code>AGENTS.md</code>, <code>skills/</code>, <code>extensions/</code>, <code>prompts/</code></td>
+</tr>
+<tr>
+<td><code>.pi/</code> im Projekt</td>
+<td>nur dieses Projekt</td>
+<td>dieselben Dateien, die erst geladen werden, wenn man dem Projekt <strong>vertraut</strong> (Project Trust). Nur <code>AGENTS.md</code> und <code>CLAUDE.md</code> im Projekt lädt pi immer</td>
+</tr>
+</tbody></table></div>
+<div class="admonition info"><p class="admonition-title">Project Trust</p>
+<p>Ein fremdes Repo könnte eine <code>.pi/mcp.json</code> mitbringen, die beliebige Programme
+startet. Deshalb lädt pi Projekt-Konfiguration erst nach <strong>ausdrücklicher
+Zustimmung</strong>. Das ist ein gutes Beispiel dafür, dass Sicherheit eine Aufgabe des
+Harness ist.</p>
+<p>Project Trust regelt allerdings nur, <em>was beim Start geladen wird</em>. Danach fragt
+pi <strong>nicht vor jedem Tool-Aufruf</strong> nach, anders als Claude Code. Wer Rückfragen will,
+baut sie per Extension ein oder lässt pi in einem Container laufen.</p>
+</div><h2 id="schritt-2-exkurs-zur-sprache-des-modells" data-title="Schritt 2 · Exkurs zur „Sprache“ des Modells">Schritt 2 · Exkurs zur „Sprache“ des Modells<a class="heading-anchor" href="#schritt-2-exkurs-zur-sprache-des-modells" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<p>Es gibt keinen einheitlichen Standard dafür, wie man ein LLM über HTTP anspricht. In
+der Praxis haben sich <strong>drei Protokolle</strong> durchgesetzt, und fast jeder Anbieter
+unterstützt mindestens eines davon.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Protokoll</th>
+<th>Endpunkt</th>
+<th>Ursprung</th>
+<th>pi-Einstellung (<code>api</code>)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>OpenAI Chat Completions</strong></td>
+<td><code>POST /v1/chat/completions</code></td>
+<td>OpenAI, heute De-facto-Standard</td>
+<td><code>openai-completions</code></td>
+</tr>
+<tr>
+<td><strong>OpenAI Responses</strong></td>
+<td><code>POST /v1/responses</code></td>
+<td>OpenAIs neueres API</td>
+<td><code>openai-responses</code></td>
+</tr>
+<tr>
+<td><strong>Anthropic Messages</strong></td>
+<td><code>POST /v1/messages</code></td>
+<td>Anthropic (Claude)</td>
+<td><code>anthropic-messages</code></td>
+</tr>
+</tbody></table></div>
+<p>Die Unterschiede liegen im Detail, zum Beispiel darin, wie Tool-Aufrufe im JSON
+aussehen.</p>
+<div class="tabs"><div class="tab-list" role="tablist"><button type="button" class="tab-btn" role="tab" id="tabs-1-t0" aria-controls="tabs-1-p0" aria-selected="true" tabindex="0">Anthropic Messages</button><button type="button" class="tab-btn" role="tab" id="tabs-1-t1" aria-controls="tabs-1-p1" aria-selected="false" tabindex="-1">OpenAI Chat Completions</button></div>
+<div class="tab-panel" role="tabpanel" id="tabs-1-p0" aria-labelledby="tabs-1-t0">
+<div class="code-block"><span class="code-lang">json</span><pre><code class="hljs language-json"><span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;tool_use&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;toolu_01&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;get_weather&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;input&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;lat&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">52.52</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;lon&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">13.41</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span></code></pre></div>
+</div>
+<div class="tab-panel" role="tabpanel" id="tabs-1-p1" aria-labelledby="tabs-1-t1" hidden>
+<div class="code-block"><span class="code-lang">json</span><pre><code class="hljs language-json"><span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;tool_calls&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;call_01&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;function&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;function&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;get_weather&quot;</span><span class="hljs-punctuation">,</span>
+                <span class="hljs-attr">&quot;arguments&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;{\&quot;lat\&quot;:52.52,\&quot;lon\&quot;:13.41}&quot;</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">]</span> <span class="hljs-punctuation">}</span></code></pre></div>
+</div></div><p>OpenAI übergibt die Argumente als <strong>String</strong> mit JSON darin, Anthropic dagegen als
+echtes Objekt. Solche Details übersetzt der <strong>Harness</strong>.</p>
+<p>Für unser Setup sieht das so aus.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Anbieter</th>
+<th>OpenAI-kompatibel</th>
+<th>Anthropic-kompatibel</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DeepSeek</td>
+<td><code>https://api.deepseek.com</code></td>
+<td><code>https://api.deepseek.com/anthropic</code></td>
+</tr>
+<tr>
+<td>Ollama (lokal)</td>
+<td><code>http://localhost:11434/v1</code></td>
+<td><code>http://localhost:11434</code> (<code>/v1/messages</code>, seit Ollama 0.14)</td>
+</tr>
+</tbody></table></div>
+<p>Beide Anbieter sprechen also <strong>beide Protokolle</strong>. Deshalb kann man DeepSeek oder
+Ollama sogar <em>in Claude Code</em> nutzen, indem man dort die Basis-URL umbiegt. Das ist
+ein schöner Beleg dafür, dass Harness und Modell wirklich getrennt sind.</p>
+<h2 id="schritt-3-deepseek-anbinden-cloud" data-title="Schritt 3 · DeepSeek anbinden (Cloud)">Schritt 3 · DeepSeek anbinden (Cloud)<a class="heading-anchor" href="#schritt-3-deepseek-anbinden-cloud" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<p>DeepSeek ist in pi bereits als Anbieter <strong>eingebaut</strong>, man braucht nur den API-Key.</p>
+<div class="code-block"><span class="code-lang">bash</span><pre><code class="hljs language-bash"><span class="sh-cmd">export</span> <span class="sh-key">DEEPSEEK_API_KEY</span><span class="sh-op">=</span><span class="sh-val">sk-...</span>   <span class="sh-comment"># oder in pi /login → DeepSeek</span>
+<span class="sh-cmd">pi</span>
+<span class="sh-comment"># in pi /model → DeepSeek-Modell wählen</span></code></pre></div>
+<h2 id="schritt-4-ollama-anbinden-lokal" data-title="Schritt 4 · Ollama anbinden (lokal)">Schritt 4 · Ollama anbinden (lokal)<a class="heading-anchor" href="#schritt-4-ollama-anbinden-lokal" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<p>Lokale Modelle trägt man in <code>~/.pi/agent/models.json</code> ein.</p>
+<div class="code-block"><span class="code-lang">json</span><pre><code class="hljs language-json"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;providers&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;ollama&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;baseUrl&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;http://localhost:11434/v1&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;api&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;openai-completions&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;apiKey&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ollama&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;models&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;qwen2.5-coder:7b&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">]</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span></code></pre></div>
+<p><code>baseUrl</code> gibt an, wo das Modell läuft, und <strong><code>api</code> legt fest</strong>, welches der drei
+Protokolle pi verwendet. <code>apiKey</code> ist bei Ollama ein Platzhalter, weil ein lokales
+Modell keinen Schlüssel braucht. Mit <code>/model</code> in pi lädt man die Datei neu und wählt
+das Modell aus.</p>
+<div class="admonition warning"><p class="admonition-title">Realistische Erwartung an lokale Modelle</p>
+<p>Kleine lokale Modelle (7 bis 14 B Parameter) können Tool-Aufrufe, machen aber
+<strong>mehr Fehler</strong>. Sie rufen Tools in falscher Reihenfolge oder mit falschen Typen auf
+oder erfinden Werte. Genau das ist in der Demo <strong>lehrreich</strong>, denn es zeigt, warum
+Schema-Validierung und gute Tool-Beschreibungen (→ <a href="06-mcp-was-zaehlt.html">Seite 6</a>)
+so wichtig sind.</p>
+</div><h2 id="schritt-5-den-harness-anpassen" data-title="Schritt 5 · Den Harness anpassen">Schritt 5 · Den Harness anpassen<a class="heading-anchor" href="#schritt-5-den-harness-anpassen" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<p>Mit wenigen Dateien wird pi zum <strong>Spezialisten</strong> für dieses Projekt.</p>
+<ul>
+<li><strong><code>AGENTS.md</code></strong> enthält Projektwissen, zum Beispiel <em>„Tagesmessages immer nach den
+Regeln in docs-dev/04-prompt-design.md schreiben“</em>.</li>
+<li>Ein <strong>Prompt-Template</strong> in <code>.pi/prompts/screen.md</code> macht aus dem ganzen Auftrag der
+Demo den Slash-Befehl <code>/screen</code>.</li>
+<li>Ein <strong>Skill</strong> bündelt Anleitung und Hilfsdateien, die pi nur bei Bedarf lädt
+(→ <a href="02-harness.html">Seite 2</a>).</li>
+<li>Eine <strong>Extension</strong> (TypeScript) bringt eigene Tools, Befehle und Freigabe-Dialoge.
+Damit kann man pi grundlegend umbauen.</li>
+</ul>
+<h2 id="live" data-title="Live">Live<a class="heading-anchor" href="#live" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<div class="admonition example"><p class="admonition-title">Zeigen</p>
+<ol>
+<li><code>pi</code> starten, mit <code>/model</code> DeepSeek wählen und eine Frage stellen.</li>
+<li>Mit <code>/model</code> zum Ollama-Modell wechseln, <strong>dieselbe</strong> Frage stellen und die
+Antworten vergleichen.</li>
+</ol>
+</div>
+
+      </article>
+      <div class="article">
+        <nav class="pager" aria-label="Seiten blättern">
+          <a class="pager-card prev" href="02-harness.html"><span class="pager-label">← Zurück</span><span class="pager-title">2 · Wie ein Harness funktioniert</span></a>
+          <a class="pager-card next" href="04-mcp-grundlagen.html"><span class="pager-label">Weiter →</span><span class="pager-title">4 · MCP verstehen</span></a>
+        </nav>
+        <p class="pager-hint">Blättern mit <kbd>←</kbd> <kbd>→</kbd></p>
+        <footer class="footer">TRMNL-MCP · Lernprojekt zu Harness, MCP und Agenten</footer>
+      </div>
+    </main>
+    <aside class="toc" aria-label="Auf dieser Seite"><p class="toc-title">Auf dieser Seite</p></aside>
+  </div>
+</body>
+</html>

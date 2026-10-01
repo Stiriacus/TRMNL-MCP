@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>8 · Der Ablauf vom Auftrag zum Display · KI-Agenten selbst bauen</title>
+  <meta name="description" content="Die Seite ist ein Baukasten, in dem jeder Akt für sich steht. Welche wir zeigen, hängt davon ab, wie weit Seite 7 gekommen ist.">
+  <meta name="theme-color" content="#2a1b12">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23dcc07a%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23b0643a%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22url(%23g)%22%2F%3E%3Ctext%20x%3D%2216%22%20y%3D%2222%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2217%22%20font-weight%3D%22700%22%20fill%3D%22%232a1b12%22%3EK%3C%2Ftext%3E%3C%2Fsvg%3E">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="assets/js/main.js" defer></script>
+</head>
+<body data-page="08-ablauf" data-mermaid="assets/vendor/mermaid.min.js">
+  <header class="topbar">
+    <button class="icon-btn nav-toggle" type="button" aria-label="Navigation öffnen" aria-expanded="false" aria-controls="sidebar">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </button>
+    <a class="brand" href="index.html">
+      <span class="brand-mark">K</span>
+      <span><span class="brand-title">KI-Agenten selbst bauen</span><span class="brand-sub">Harness · MCP · E-Ink</span></span>
+    </a>
+    <span class="topbar-spacer"></span>
+    <span class="progress" aria-hidden="true"></span>
+  </header>
+  <div class="scrim" aria-hidden="true"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <nav aria-label="Seiten">
+      <div class="nav-group">
+        <p class="nav-group-title">Start</p>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="index.html"><span class="nav-num">◆</span><span>Übersicht</span></a></li>
+        </ul>
+      </div>
+      <div class="nav-group">
+        <p class="nav-group-title">Session 1 · Verstehen</p>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="01-bausteine.html"><span class="nav-num">1</span><span>Die Bausteine</span></a></li>
+          <li><a class="nav-link" href="02-harness.html"><span class="nav-num">2</span><span>Wie ein Harness funktioniert</span></a></li>
+          <li><a class="nav-link" href="03-pi-aufsetzen.html"><span class="nav-num">3</span><span>Eigenen Harness aufsetzen mit pi</span></a></li>
+          <li><a class="nav-link" href="04-mcp-grundlagen.html"><span class="nav-num">4</span><span>MCP verstehen</span></a></li>
+          <li><a class="nav-link" href="05-api-zu-mcp.html"><span class="nav-num">5</span><span>Von der API zum MCP-Server</span></a></li>
+          <li><a class="nav-link" href="06-mcp-was-zaehlt.html"><span class="nav-num">6</span><span>Was bei einem MCP-Server wirklich zählt</span></a></li>
+        </ul>
+      </div>
+      <div class="nav-group">
+        <p class="nav-group-title">Session 2 · Bauen</p>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="07-selbst-bauen.html"><span class="nav-num">7</span><span>Selbst bauen</span></a></li>
+          <li><a class="nav-link" href="08-ablauf.html" aria-current="page"><span class="nav-num">8</span><span>Der Ablauf vom Auftrag zum Display</span></a></li>
+          <li><a class="nav-link" href="09-abschluss.html"><span class="nav-num">9</span><span>Abschluss und Einordnung</span></a></li>
+        </ul>
+      </div>
+      </nav>
+    </aside>
+    <main class="content">
+      <article class="article">
+<h1><span class="h1-num">8</span>Der Ablauf vom Auftrag zum Display</h1>
+<p class="lead">Auf <a href="07-selbst-bauen.html">Seite 7</a> sind die Tools entstanden, jetzt arbeiten sie
+zusammen. Ein Satz im Chat, ein paar Tool-Aufrufe und am Ende ein fertiger Screen,
+mit zwei Harnesses und mehreren Modellen, aber <strong>denselben MCP-Servern.</strong></p>
+<hr class="lead-rule">
+<p>Die Seite ist ein <strong>Baukasten</strong>, in dem jeder Akt für sich steht. Welche wir zeigen,
+hängt davon ab, wie weit Seite 7 gekommen ist.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Akt</th>
+<th>Braucht</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1. Der Tagesscreen</td>
+<td><code>trmnl-display</code> mit drei Tools</td>
+</tr>
+<tr>
+<td>2. Anderer Harness, anderes Modell</td>
+<td>Akt 1 und pi</td>
+</tr>
+<tr>
+<td>3. Die Tagesplaylist</td>
+<td>zusätzlich <code>tagesinhalte</code>, fürs Display LaraPaper</td>
+</tr>
+<tr>
+<td>4. Bewusst kaputt machen</td>
+<td>Akt 1</td>
+</tr>
+</tbody></table></div>
+<h2 id="was-aus-seite-7-da-sein-muss" data-title="Was aus Seite 7 da sein muss">Was aus Seite 7 da sein muss<a class="heading-anchor" href="#was-aus-seite-7-da-sein-muss" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<ul class="task-list">
+<li class="task-list-item"><input type="checkbox" aria-label="erledigt"> <code>trmnl-display</code> mit <code>get_weather</code>, <code>get_date_info</code> und <code>render_weather_screen</code>,
+jedes Tool im Inspector geprüft</li>
+<li class="task-list-item"><input type="checkbox" aria-label="erledigt"> in Claude Code angebunden, sodass <code>claude mcp list</code> den Server zeigt</li>
+<li class="task-list-item"><input type="checkbox" aria-label="erledigt"> für Akt 2 pi mit DeepSeek-Key, ein vorher heruntergeladenes Ollama-Modell
+(<code>ollama pull …</code> dauert sonst Minuten) und eine vorhandene <code>.pi/mcp.json</code></li>
+<li class="task-list-item"><input type="checkbox" aria-label="erledigt"> für Akt 3 der Server <code>tagesinhalte</code>, gebaut und angebunden</li>
+</ul>
+<p>Nur fürs echte Display braucht es zusätzlich Folgendes.</p>
+<ul class="task-list">
+<li class="task-list-item"><input type="checkbox" aria-label="erledigt"> LaraPaper läuft, das Gerät ist verbunden (→ <span class="dev-ref" title="Entwickler-Doku im Projektordner: docs-dev/06-recherche-trmnl.md">docs-dev/06</span>)</li>
+<li class="task-list-item"><input type="checkbox" aria-label="erledigt"> Plugins <code>wetter</code>, <code>zitat</code>, <code>geschichte</code> und <code>witz</code> sind angelegt und in der
+Playlist, <code>update_plugin</code> ist gebaut</li>
+<li class="task-list-item"><input type="checkbox" aria-label="erledigt"> <code>refresh_rate</code> am Gerät steht für die Demo auf ca. 60 s</li>
+</ul>
+<p>Ohne Display ist das Ergebnis das <strong>PNG</strong> unter <code>server/public/images/</code>. Für alles,
+was hier gezeigt wird, reicht das.</p>
+<h2 id="akt-1-der-tagesscreen-claude-code" data-title="Akt 1 · Der Tagesscreen (Claude Code)">Akt 1 · Der Tagesscreen (Claude Code)<a class="heading-anchor" href="#akt-1-der-tagesscreen-claude-code" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<div class="code-block"><pre><code class="hljs language-text">Hole das aktuelle Wetter für Berlin und das heutige Datum. Schreibe danach eine
+Tagesmessage nach den Regeln aus docs-dev/04-prompt-design.md und erzeuge den
+Tagesscreen.</code></pre></div>
+<p>Auf vier Dinge achten wir.</p>
+<ol>
+<li><strong>Die Reihenfolge.</strong> Das Modell holt erst Wetter und Datum (oft parallel) und ruft
+<code>render_weather_screen</code> zuletzt auf. Das steht in keinem Code, sondern <strong>nur in den
+Tool-Beschreibungen</strong>, die wir auf Seite 7 geschrieben haben.</li>
+<li><strong>Die Koordinaten.</strong> Im Auftrag steht „Berlin“, das Tool will <code>lat</code> und <code>lon</code>.
+Das Modell <strong>übersetzt selbst.</strong></li>
+<li><strong>Die Tool-Ergebnisse</strong> im Verlauf aufklappen. Das ist das JSON aus unserem Server.</li>
+<li><strong>Das Ergebnis.</strong> Das PNG öffnen oder mit LaraPaper nach dem nächsten Refresh aufs
+Display schauen.</li>
+</ol>
+<h2 id="akt-2-anderer-harness-anderes-modell-pi" data-title="Akt 2 · Anderer Harness, anderes Modell (pi)">Akt 2 · Anderer Harness, anderes Modell (pi)<a class="heading-anchor" href="#akt-2-anderer-harness-anderes-modell-pi" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<p>Denselben Auftrag stellen wir in pi, zuerst mit <strong>DeepSeek</strong> und dann mit einem
+<strong>lokalen Ollama-Modell</strong>. <strong>Am Server ändert sich nichts.</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>Claude Code + Claude</th>
+<th>pi + DeepSeek</th>
+<th>pi + Ollama (lokal)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Tools in richtiger Reihenfolge?</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Message regelkonform (≤ 120 Zeichen, keine Emojis)?</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Dauer</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Kosten</td>
+<td></td>
+<td></td>
+<td>0 €</td>
+</tr>
+</tbody></table></div>
+<p><em>Die Tabelle live ausfüllen, das macht den Vergleich greifbar.</em></p>
+<h2 id="akt-3-die-tagesplaylist-zwei-mcp-server" data-title="Akt 3 · Die Tagesplaylist (zwei MCP-Server)">Akt 3 · Die Tagesplaylist (zwei MCP-Server)<a class="heading-anchor" href="#akt-3-die-tagesplaylist-zwei-mcp-server" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<div class="code-block"><pre><code class="hljs language-text">Stell die Inhalte für heute zusammen: Wetter, ein Zitat, ein Ereignis aus der
+Geschichte und zum Abschluss ein Kaffee-Witz.</code></pre></div>
+<p>Hier lohnt der Blick auf vier Punkte.</p>
+<ul>
+<li>Der Agent nutzt <strong>zwei Server gleichzeitig</strong> (<code>tagesinhalte</code> und <code>trmnl-display</code>),
+die nichts voneinander wissen.</li>
+<li>Er ruft die <strong>Datenquellen parallel</strong> ab und macht dann die Arbeit, die Code nicht
+kann, also auswählen, übersetzen und kürzen.</li>
+<li><strong>Welches Geschichtsereignis</strong> wählt er, und warum? Die Tool-Beschreibung bittet um
+„nicht belastend“.</li>
+<li><strong>Ohne Display</strong> zeigt der Agent die Inhalte im Chat. Mit LaraPaper befüllt er per
+<code>update_plugin</code> die Plugins, und die Playlist rotiert bei jedem Refresh zum nächsten
+Screen.</li>
+</ul>
+<h2 id="akt-4-bewusst-kaputt-machen" data-title="Akt 4 · Bewusst kaputt machen">Akt 4 · Bewusst kaputt machen<a class="heading-anchor" href="#akt-4-bewusst-kaputt-machen" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<p>Hier sieht man am deutlichsten, <strong>wie ein Agent „denkt“.</strong> Nach jedem Versuch die
+Änderung zurücknehmen.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Was wird kaputt gemacht?</th>
+<th>Frage</th>
+<th>Was man typischerweise sieht</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Beschreibung von <code>render_weather_screen</code> auf <code>&quot;rendert&quot;</code> kürzen</td>
+<td>Ruft das Modell es noch zur richtigen Zeit auf?</td>
+<td>Starke Modelle raten oft richtig, schwache rufen es zu früh oder gar nicht auf</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Wetter-URL in <code>lib/weather.ts</code> ungültig machen</td>
+<td>Meldet das Modell den Fehler, oder erfindet es Wetter?</td>
+<td><code>isError: true</code> kommt an. Gute Modelle melden es, schwache „halluzinieren“ manchmal Werte</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>get_date_info</code> gibt <code>isoWeek</code> als String zurück</td>
+<td>Wie reagiert <code>render_weather_screen</code>, und korrigiert das Modell selbst?</td>
+<td>Validierungsfehler, oft korrigiert das Modell den Typ im zweiten Versuch</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Den Auftrag unklar formulieren, etwa <em>„Mach was Schönes aufs Display.“</em></td>
+<td>Was macht das Modell ohne klare Vorgaben?</td>
+<td>Zeigt, wie viel an Auftrag und <code>AGENTS.md</code> hängt</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Tool zurück auf <code>render_screen</code> umbenennen, die Grenze aus der Beschreibung streichen und dann <em>„Zeig nach dem Wetter noch einen Kaffee-Witz.“</em></td>
+<td>Sucht das Modell ein passendes Tool, oder missbraucht es den Wetter-Screen?</td>
+<td>Schwache Modelle füllen das Wetter-Schema irgendwie, notfalls mit erfundenen Werten. Das Schema merkt nichts</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Im Tool <code>get_on_this_day</code> die Bereinigung von <code>U+00AD</code> entfernen <em>(nur mit Display)</em></td>
+<td>Sieht man es auf dem Display?</td>
+<td>Unsichtbare Zeichen zeigen, dass Daten aus APIs nie so sauber sind, wie sie aussehen</td>
+</tr>
+</tbody></table></div>
+<div class="admonition warning"><p class="admonition-title">Der wichtigste Fall</p>
+<p>Fall 2 zeigt, dass ein Agent, der fehlende Daten <strong>erfindet</strong>, <strong>gefährlich</strong> ist. Die
+Gegenmaßnahmen liegen im MCP-Server (klare Fehlertexte), im Prompt („erfinde
+nichts“) und in der Modellwahl.</p>
+</div><h2 id="plan-b-falls-live-etwas-hangt" data-title="Plan B, falls live etwas hängt">Plan B, falls live etwas hängt<a class="heading-anchor" href="#plan-b-falls-live-etwas-hangt" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<ul>
+<li><strong>Ein Tool funktioniert nicht.</strong> Die Fehlermeldung zurück an den Agenten geben und
+ihn reparieren lassen. Das ist selbst eine gute Demo.</li>
+<li><strong>Das Display reagiert nicht.</strong> Das PNG oder die LaraPaper-Vorschau zeigen, die
+Logik ist dieselbe.</li>
+<li><strong>Die Modell-API ist nicht erreichbar.</strong> Auf Ollama (lokal) ausweichen. Das ist
+zugleich ein Argument für lokale Modelle.</li>
+<li><strong>Der Server startet nicht im Harness.</strong> Im Inspector zeigen, dass die Tools für
+sich funktionieren.</li>
+</ul>
+
+      </article>
+      <div class="article">
+        <nav class="pager" aria-label="Seiten blättern">
+          <a class="pager-card prev" href="07-selbst-bauen.html"><span class="pager-label">← Zurück</span><span class="pager-title">7 · Selbst bauen</span></a>
+          <a class="pager-card next" href="09-abschluss.html"><span class="pager-label">Weiter →</span><span class="pager-title">9 · Abschluss und Einordnung</span></a>
+        </nav>
+        <p class="pager-hint">Blättern mit <kbd>←</kbd> <kbd>→</kbd></p>
+        <footer class="footer">TRMNL-MCP · Lernprojekt zu Harness, MCP und Agenten</footer>
+      </div>
+    </main>
+    <aside class="toc" aria-label="Auf dieser Seite"><p class="toc-title">Auf dieser Seite</p></aside>
+  </div>
+</body>
+</html>

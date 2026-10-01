@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>1 · Die Bausteine · KI-Agenten selbst bauen</title>
+  <meta name="description" content="Das ist die wichtigste Einsicht. Das Modell schreibt nur eine strukturierte Bitte, etwa „ich möchte get_weather mit lat=52.52, lon=13.41 aufrufen“. Ausgeführt wird der Aufruf vom H">
+  <meta name="theme-color" content="#2a1b12">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23dcc07a%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23b0643a%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22url(%23g)%22%2F%3E%3Ctext%20x%3D%2216%22%20y%3D%2222%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2217%22%20font-weight%3D%22700%22%20fill%3D%22%232a1b12%22%3EK%3C%2Ftext%3E%3C%2Fsvg%3E">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="assets/js/main.js" defer></script>
+</head>
+<body data-page="01-bausteine" data-mermaid="assets/vendor/mermaid.min.js">
+  <header class="topbar">
+    <button class="icon-btn nav-toggle" type="button" aria-label="Navigation öffnen" aria-expanded="false" aria-controls="sidebar">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </button>
+    <a class="brand" href="index.html">
+      <span class="brand-mark">K</span>
+      <span><span class="brand-title">KI-Agenten selbst bauen</span><span class="brand-sub">Harness · MCP · E-Ink</span></span>
+    </a>
+    <span class="topbar-spacer"></span>
+    <span class="progress" aria-hidden="true"></span>
+  </header>
+  <div class="scrim" aria-hidden="true"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <nav aria-label="Seiten">
+      <div class="nav-group">
+        <p class="nav-group-title">Start</p>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="index.html"><span class="nav-num">◆</span><span>Übersicht</span></a></li>
+        </ul>
+      </div>
+      <div class="nav-group">
+        <p class="nav-group-title">Session 1 · Verstehen</p>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="01-bausteine.html" aria-current="page"><span class="nav-num">1</span><span>Die Bausteine</span></a></li>
+          <li><a class="nav-link" href="02-harness.html"><span class="nav-num">2</span><span>Wie ein Harness funktioniert</span></a></li>
+          <li><a class="nav-link" href="03-pi-aufsetzen.html"><span class="nav-num">3</span><span>Eigenen Harness aufsetzen mit pi</span></a></li>
+          <li><a class="nav-link" href="04-mcp-grundlagen.html"><span class="nav-num">4</span><span>MCP verstehen</span></a></li>
+          <li><a class="nav-link" href="05-api-zu-mcp.html"><span class="nav-num">5</span><span>Von der API zum MCP-Server</span></a></li>
+          <li><a class="nav-link" href="06-mcp-was-zaehlt.html"><span class="nav-num">6</span><span>Was bei einem MCP-Server wirklich zählt</span></a></li>
+        </ul>
+      </div>
+      <div class="nav-group">
+        <p class="nav-group-title">Session 2 · Bauen</p>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="07-selbst-bauen.html"><span class="nav-num">7</span><span>Selbst bauen</span></a></li>
+          <li><a class="nav-link" href="08-ablauf.html"><span class="nav-num">8</span><span>Der Ablauf vom Auftrag zum Display</span></a></li>
+          <li><a class="nav-link" href="09-abschluss.html"><span class="nav-num">9</span><span>Abschluss und Einordnung</span></a></li>
+        </ul>
+      </div>
+      </nav>
+    </aside>
+    <main class="content">
+      <article class="article">
+<h1><span class="h1-num">1</span>Die Bausteine</h1>
+<p class="lead">Weder Modell noch Harness können allein etwas. Das Modell denkt und entscheidet,
+kann aber nur <strong>Text</strong> erzeugen. Der Harness ist die Werkzeugkiste drumherum mit
+Chat-Kontext, Tool-Aufrufen und Berechtigungen, trifft aber selbst keine einzige
+Entscheidung. Erst zusammen entsteht ein <strong>Agent</strong>. Weitere Werkzeuge kommen über
+MCP in standardisierter Form dazu.</p>
+<hr class="lead-rule">
+<h2 id="funf-begriffe-sauber-getrennt" data-title="Fünf Begriffe, sauber getrennt">Fünf Begriffe, sauber getrennt<a class="heading-anchor" href="#funf-begriffe-sauber-getrennt" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Begriff</th>
+<th>Was es ist</th>
+<th>Im Projekt</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Modell (LLM)</strong></td>
+<td>Eine Funktion, in die Text hineingeht und aus der Text herauskommt. Kein Gedächtnis, kein Zugriff auf irgendetwas.</td>
+<td>Claude, DeepSeek, ein lokales Qwen über Ollama</td>
+</tr>
+<tr>
+<td><strong>Tool</strong></td>
+<td>Eine Funktion mit Name, Beschreibung und Parameterschema, die das Modell <em>anfordern</em> kann</td>
+<td><code>get_weather(lat, lon)</code></td>
+</tr>
+<tr>
+<td><strong>Harness</strong></td>
+<td>Die Werkzeugkiste um das Modell. Sie verwaltet den Chat-Kontext, stellt Tools bereit, führt die vom Modell angeforderten Aufrufe aus und prüft Berechtigungen. <strong>Ohne Modell passiert nichts.</strong></td>
+<td>Claude Code, pi</td>
+</tr>
+<tr>
+<td><strong>Agent</strong></td>
+<td>Modell, Harness, Tools und Auftrag zusammen, also ein System, das selbstständig mehrere Schritte bis zum Ziel geht</td>
+<td>„Mach den Screen für heute“</td>
+</tr>
+<tr>
+<td><strong>MCP</strong></td>
+<td>Offenes Protokoll, über das ein Harness Tools aus externen Servern einbindet</td>
+<td>Unser <code>trmnl-display</code>-Server</td>
+</tr>
+</tbody></table></div>
+<h2 id="das-modell-ruft-nichts-selbst-auf" data-title="Das Modell ruft nichts selbst auf">Das Modell ruft nichts selbst auf<a class="heading-anchor" href="#das-modell-ruft-nichts-selbst-auf" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<p>Das ist die wichtigste Einsicht. Das Modell schreibt nur eine <strong>strukturierte Bitte</strong>,
+etwa „ich möchte <code>get_weather</code> mit <code>lat=52.52, lon=13.41</code> aufrufen“. Ausgeführt
+wird der Aufruf vom <strong>Harness</strong>. Das Ergebnis kommt als Text zurück in den Kontext, und
+das Modell macht weiter.</p>
+<div class="diagram"><pre class="mermaid">sequenceDiagram
+    participant U as Nutzer
+    participant H as Harness
+    participant M as Modell
+    participant T as Tool (MCP-Server)
+    U-&gt;&gt;H: &quot;Mach den Screen für heute&quot;
+    H-&gt;&gt;M: Auftrag + Liste verfügbarer Tools
+    M--&gt;&gt;H: tool_use: get_weather(52.52, 13.41)
+    H-&gt;&gt;T: ausführen
+    T--&gt;&gt;H: {&quot;temperature&quot;: 18, &quot;condition&quot;: &quot;Klar&quot;, …}
+    H-&gt;&gt;M: Ergebnis
+    M--&gt;&gt;H: tool_use: get_date_info()
+    H-&gt;&gt;T: ausführen
+    T--&gt;&gt;H: {&quot;formatted&quot;: &quot;30 / 09 / 2026&quot;, &quot;isoWeek&quot;: 40}
+    H-&gt;&gt;M: Ergebnis
+    M--&gt;&gt;H: tool_use: render_weather_screen(…, message: &quot;Klarer Mittwoch …&quot;)
+    H-&gt;&gt;T: ausführen
+    T--&gt;&gt;H: {&quot;filename&quot;: &quot;screen-….png&quot;}
+    H-&gt;&gt;M: Ergebnis
+    M--&gt;&gt;H: &quot;Fertig, der Screen ist gerendert.&quot;
+    H-&gt;&gt;U: Antwort</pre></div>
+<h2 id="arbeitsteilung-zwischen-kopf-und-werkzeugkiste" data-title="Arbeitsteilung zwischen Kopf und Werkzeugkiste">Arbeitsteilung zwischen Kopf und Werkzeugkiste<a class="heading-anchor" href="#arbeitsteilung-zwischen-kopf-und-werkzeugkiste" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Das Modell …</th>
+<th>Der Harness …</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>versteht den Auftrag</td>
+<td>nimmt den Auftrag entgegen und schickt ihn samt Verlauf ans Modell</td>
+</tr>
+<tr>
+<td>entscheidet, welches Tool mit welchen Werten nötig ist</td>
+<td>bietet die Tools an und führt den Aufruf aus</td>
+</tr>
+<tr>
+<td>bewertet das Ergebnis und plant den nächsten Schritt</td>
+<td>hängt das Ergebnis an den Kontext und fragt erneut</td>
+</tr>
+<tr>
+<td>formuliert die Antwort</td>
+<td>zeigt sie an und speichert den Verlauf</td>
+</tr>
+</tbody></table></div>
+<p>Der Harness ist <strong>reine Mechanik</strong>. Er leitet weiter, führt aus und passt auf. Ohne
+Modell ist er eine Werkzeugkiste, die niemand öffnet. Ohne Harness ist das Modell ein
+Kopf ohne Hände.</p>
+<p>Daraus folgen drei Punkte, die im weiteren Verlauf immer wieder auftauchen.</p>
+<ul>
+<li><strong>Kontrolle</strong> liegt beim Harness. Er entscheidet nicht, <em>was</em> passiert, aber <em>ob</em>
+ein angefragter Tool-Aufruf erlaubt ist (Berechtigungen, Sandbox). Das Modell kann
+nur darum bitten.</li>
+<li>Das Modell sieht nur <strong>Beschreibungen</strong>. Welches Tool es wann nutzt, entscheidet
+es anhand von Name, Beschreibung und Schema. Deshalb sind gute Beschreibungen so
+wichtig (→ <a href="06-mcp-was-zaehlt.html">Seite 6</a>).</li>
+<li>Modelle sind <strong>austauschbar</strong>. Solange ein Modell Tool-Calls beherrscht, kann
+derselbe Harness mit denselben Tools arbeiten (→ <a href="03-pi-aufsetzen.html">Seite 3</a>).</li>
+</ul>
+<h2 id="analogie" data-title="Analogie">Analogie<a class="heading-anchor" href="#analogie" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Modell</td>
+<td>der Handwerker, der weiß, was zu tun ist, aber kein Werkzeug dabeihat</td>
+</tr>
+<tr>
+<td>Harness</td>
+<td>die Werkstatt mit Werkbank, Notizblock (Kontext) und Sicherheitsregeln, in der ohne Handwerker alles stillsteht</td>
+</tr>
+<tr>
+<td>Tools</td>
+<td>die Werkzeuge wie Wetterstation, Drucker oder Kalender</td>
+</tr>
+<tr>
+<td>MCP</td>
+<td>das Handbuch im Einheitsformat, das jedem Werkzeug beiliegt und erklärt, was es kann, wann man es nimmt und wie man es bedient. Dazu kommt ein genormter Anschluss, damit jede Werkstatt es nutzen kann</td>
+</tr>
+</tbody></table></div>
+
+      </article>
+      <div class="article">
+        <nav class="pager" aria-label="Seiten blättern">
+          <a class="pager-card prev" href="index.html"><span class="pager-label">← Zurück</span><span class="pager-title">Übersicht</span></a>
+          <a class="pager-card next" href="02-harness.html"><span class="pager-label">Weiter →</span><span class="pager-title">2 · Wie ein Harness funktioniert</span></a>
+        </nav>
+        <p class="pager-hint">Blättern mit <kbd>←</kbd> <kbd>→</kbd></p>
+        <footer class="footer">TRMNL-MCP · Lernprojekt zu Harness, MCP und Agenten</footer>
+      </div>
+    </main>
+    <aside class="toc" aria-label="Auf dieser Seite"><p class="toc-title">Auf dieser Seite</p></aside>
+  </div>
+</body>
+</html>

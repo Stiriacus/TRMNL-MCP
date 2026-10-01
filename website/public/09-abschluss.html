@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>9 · Abschluss und Einordnung · KI-Agenten selbst bauen</title>
+  <meta name="description" content="Im Projekt sind Datum, Wetter und Rendering Code. Die Tagesmessage und die Steuerung übernimmt das Modell. Wer den Screen regelmäßig automatisch aktualisieren wollte, bräuchte dafü">
+  <meta name="theme-color" content="#2a1b12">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23dcc07a%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23b0643a%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22url(%23g)%22%2F%3E%3Ctext%20x%3D%2216%22%20y%3D%2222%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2217%22%20font-weight%3D%22700%22%20fill%3D%22%232a1b12%22%3EK%3C%2Ftext%3E%3C%2Fsvg%3E">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="assets/js/main.js" defer></script>
+</head>
+<body data-page="09-abschluss" data-mermaid="assets/vendor/mermaid.min.js">
+  <header class="topbar">
+    <button class="icon-btn nav-toggle" type="button" aria-label="Navigation öffnen" aria-expanded="false" aria-controls="sidebar">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </button>
+    <a class="brand" href="index.html">
+      <span class="brand-mark">K</span>
+      <span><span class="brand-title">KI-Agenten selbst bauen</span><span class="brand-sub">Harness · MCP · E-Ink</span></span>
+    </a>
+    <span class="topbar-spacer"></span>
+    <span class="progress" aria-hidden="true"></span>
+  </header>
+  <div class="scrim" aria-hidden="true"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <nav aria-label="Seiten">
+      <div class="nav-group">
+        <p class="nav-group-title">Start</p>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="index.html"><span class="nav-num">◆</span><span>Übersicht</span></a></li>
+        </ul>
+      </div>
+      <div class="nav-group">
+        <p class="nav-group-title">Session 1 · Verstehen</p>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="01-bausteine.html"><span class="nav-num">1</span><span>Die Bausteine</span></a></li>
+          <li><a class="nav-link" href="02-harness.html"><span class="nav-num">2</span><span>Wie ein Harness funktioniert</span></a></li>
+          <li><a class="nav-link" href="03-pi-aufsetzen.html"><span class="nav-num">3</span><span>Eigenen Harness aufsetzen mit pi</span></a></li>
+          <li><a class="nav-link" href="04-mcp-grundlagen.html"><span class="nav-num">4</span><span>MCP verstehen</span></a></li>
+          <li><a class="nav-link" href="05-api-zu-mcp.html"><span class="nav-num">5</span><span>Von der API zum MCP-Server</span></a></li>
+          <li><a class="nav-link" href="06-mcp-was-zaehlt.html"><span class="nav-num">6</span><span>Was bei einem MCP-Server wirklich zählt</span></a></li>
+        </ul>
+      </div>
+      <div class="nav-group">
+        <p class="nav-group-title">Session 2 · Bauen</p>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="07-selbst-bauen.html"><span class="nav-num">7</span><span>Selbst bauen</span></a></li>
+          <li><a class="nav-link" href="08-ablauf.html"><span class="nav-num">8</span><span>Der Ablauf vom Auftrag zum Display</span></a></li>
+          <li><a class="nav-link" href="09-abschluss.html" aria-current="page"><span class="nav-num">9</span><span>Abschluss und Einordnung</span></a></li>
+        </ul>
+      </div>
+      </nav>
+    </aside>
+    <main class="content">
+      <article class="article">
+<h1><span class="h1-num">9</span>Abschluss und Einordnung</h1>
+<p class="lead">Agenten lohnen sich dort, wo <strong>Sprache</strong> verstanden oder erzeugt oder <strong>flexibel
+entschieden</strong> werden muss. Alles Berechenbare gehört in normalen Code, und <strong>MCP
+verbindet beide Welten</strong>.</p>
+<hr class="lead-rule">
+<h2 id="wann-ein-agent-wann-normaler-code" data-title="Wann ein Agent, wann normaler Code?">Wann ein Agent, wann normaler Code?<a class="heading-anchor" href="#wann-ein-agent-wann-normaler-code" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Eher Agent</th>
+<th>Eher klassischer Code</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Aufträge in natürlicher Sprache, die jedes Mal etwas anders sind</td>
+<td>Immer gleicher, festgelegter Ablauf</td>
+</tr>
+<tr>
+<td>Texte formulieren, zusammenfassen, einordnen</td>
+<td>Rechnen, Datumslogik, Formate</td>
+</tr>
+<tr>
+<td>Mehrere Systeme situationsabhängig kombinieren</td>
+<td>Harte Anforderungen an Korrektheit und Reproduzierbarkeit</td>
+</tr>
+<tr>
+<td>Ein Mensch prüft das Ergebnis</td>
+<td>Läuft unbeaufsichtigt und muss immer funktionieren</td>
+</tr>
+</tbody></table></div>
+<p>Im Projekt sind Datum, Wetter und Rendering <strong>Code</strong>. Die Tagesmessage und die
+Steuerung übernimmt das <strong>Modell</strong>. Wer den Screen regelmäßig automatisch aktualisieren
+wollte, bräuchte dafür keinen Agenten, sondern ein Skript mit einem einzelnen
+LLM-Aufruf für die Message.</p>
+<h2 id="was-man-aus-dem-projekt-mitnehmen-kann" data-title="Was man aus dem Projekt mitnehmen kann">Was man aus dem Projekt mitnehmen kann<a class="heading-anchor" href="#was-man-aus-dem-projekt-mitnehmen-kann" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<ol>
+<li><strong>Das Modell ist austauschbar.</strong> Claude, DeepSeek und ein lokales Modell arbeiten
+mit denselben Tools. Man legt sich nicht auf einen Anbieter fest.</li>
+<li>Der <strong>Harness</strong> ist die eigentliche <strong>Plattform</strong>. Kontext, Berechtigungen und
+Erweiterungen entscheiden über Qualität und Sicherheit.</li>
+<li><strong>MCP ist die Integrationsschicht.</strong> Ein Server, einmal gebaut, funktioniert in
+jedem MCP-fähigen Werkzeug.</li>
+<li>Die Qualität eines MCP-Servers steckt in <strong>Beschreibungen, Schemas und
+Fehlertexten</strong>, nicht in der Menge der Tools.</li>
+</ol>
+<h2 id="risiken-und-offene-fragen" data-title="Risiken und offene Fragen">Risiken und offene Fragen<a class="heading-anchor" href="#risiken-und-offene-fragen" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Thema</th>
+<th>Frage</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Halluzination</strong></td>
+<td>Was passiert, wenn das Modell Daten erfindet? Dagegen helfen klare Fehler, Validierung und ein Mensch im Loop</td>
+</tr>
+<tr>
+<td><strong>Sicherheit</strong></td>
+<td>Wer darf welche Tools nutzen? Wie gehen wir mit Prompt Injection über Tool-Ergebnisse um?</td>
+</tr>
+<tr>
+<td><strong>Datenschutz</strong></td>
+<td>Welche Daten gehen an welchen Anbieter? Lokale Modelle sind eine Option</td>
+</tr>
+<tr>
+<td><strong>Kosten</strong></td>
+<td>Pro Auftrag Cent-Beträge (DeepSeek) bis nichts (lokal). Bei großen Modellen und vielen Aufrufen summiert es sich</td>
+</tr>
+<tr>
+<td><strong>Betrieb</strong></td>
+<td>stdio reicht lokal. Für ein Team braucht man HTTP-Server mit Authentifizierung</td>
+</tr>
+</tbody></table></div>
+<h2 id="mogliche-nachste-schritte" data-title="Mögliche nächste Schritte">Mögliche nächste Schritte<a class="heading-anchor" href="#mogliche-nachste-schritte" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<ul>
+<li><strong>Interne MCP-Server.</strong> Welche unserer Systeme (Ticketsystem, Wiki, Monitoring,
+Datenbanken) würden als Tools für Agenten Sinn ergeben?</li>
+<li><strong>Ein Pilot</strong> als kleiner, klar abgegrenzter Anwendungsfall mit Mensch im Loop.</li>
+<li><strong>Die Harness-Entscheidung.</strong> Ein fertiges Produkt (Claude Code o. ä.) oder ein
+angepasster, offener Harness (pi) mit eigenen Regeln und eigener Modellwahl?</li>
+</ul>
+<h2 id="designentscheidungen-in-diesem-projekt" data-title="Designentscheidungen in diesem Projekt">Designentscheidungen in diesem Projekt<a class="heading-anchor" href="#designentscheidungen-in-diesem-projekt" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<p>Nachlesen lassen sie sich in <span class="dev-ref" title="Entwickler-Doku im Projektordner: docs-dev/01-projektuebersicht.md"><code>docs-dev</code></span>.</p>
+<ul>
+<li><strong>Tool-Verträge vor dem Code</strong> spezifiziert (<code>03-mcp-tool-spezifikation.md</code>)</li>
+<li>Logik (<code>lib/</code>) und MCP-Hülle (<code>tools/</code>) <strong>getrennt</strong></li>
+<li><strong>Fehler- und Fallback-Verhalten</strong> für jeden Ausfall durchdacht
+(<code>05-fehler-und-fallbacks.md</code>)</li>
+<li><strong>Prompt-Regeln explizit und prüfbar</strong> formuliert (<code>04-prompt-design.md</code>)</li>
+<li>Bestehende <strong>Infrastruktur</strong> (LaraPaper) statt <strong>Eigenbau</strong> genutzt, nachdem die API
+recherchiert war (<code>06-recherche-trmnl.md</code>)</li>
+</ul>
+
+      </article>
+      <div class="article">
+        <nav class="pager" aria-label="Seiten blättern">
+          <a class="pager-card prev" href="08-ablauf.html"><span class="pager-label">← Zurück</span><span class="pager-title">8 · Der Ablauf vom Auftrag zum Display</span></a>
+          
+        </nav>
+        <p class="pager-hint">Blättern mit <kbd>←</kbd> <kbd>→</kbd></p>
+        <footer class="footer">TRMNL-MCP · Lernprojekt zu Harness, MCP und Agenten</footer>
+      </div>
+    </main>
+    <aside class="toc" aria-label="Auf dieser Seite"><p class="toc-title">Auf dieser Seite</p></aside>
+  </div>
+</body>
+</html>

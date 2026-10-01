@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KI-Agenten selbst bauen</title>
+  <meta name="description" content="Wie baut man heute mit Sprachmodellen etwas, das tatsächlich handelt, statt nur zu chatten? Dieser Guide erklärt die drei Bausteine Modell, Harness und MCP. Er zeigt sie an einem k">
+  <meta name="theme-color" content="#2a1b12">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23dcc07a%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23b0643a%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22url(%23g)%22%2F%3E%3Ctext%20x%3D%2216%22%20y%3D%2222%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2217%22%20font-weight%3D%22700%22%20fill%3D%22%232a1b12%22%3EK%3C%2Ftext%3E%3C%2Fsvg%3E">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="assets/js/main.js" defer></script>
+</head>
+<body data-page="index" data-mermaid="assets/vendor/mermaid.min.js">
+  <header class="topbar">
+    <button class="icon-btn nav-toggle" type="button" aria-label="Navigation öffnen" aria-expanded="false" aria-controls="sidebar">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </button>
+    <a class="brand" href="index.html">
+      <span class="brand-mark">K</span>
+      <span><span class="brand-title">KI-Agenten selbst bauen</span><span class="brand-sub">Harness · MCP · E-Ink</span></span>
+    </a>
+    <span class="topbar-spacer"></span>
+    <span class="progress" aria-hidden="true"></span>
+  </header>
+  <div class="scrim" aria-hidden="true"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <nav aria-label="Seiten">
+      <div class="nav-group">
+        <p class="nav-group-title">Start</p>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="index.html" aria-current="page"><span class="nav-num">◆</span><span>Übersicht</span></a></li>
+        </ul>
+      </div>
+      <div class="nav-group">
+        <p class="nav-group-title">Session 1 · Verstehen</p>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="01-bausteine.html"><span class="nav-num">1</span><span>Die Bausteine</span></a></li>
+          <li><a class="nav-link" href="02-harness.html"><span class="nav-num">2</span><span>Wie ein Harness funktioniert</span></a></li>
+          <li><a class="nav-link" href="03-pi-aufsetzen.html"><span class="nav-num">3</span><span>Eigenen Harness aufsetzen mit pi</span></a></li>
+          <li><a class="nav-link" href="04-mcp-grundlagen.html"><span class="nav-num">4</span><span>MCP verstehen</span></a></li>
+          <li><a class="nav-link" href="05-api-zu-mcp.html"><span class="nav-num">5</span><span>Von der API zum MCP-Server</span></a></li>
+          <li><a class="nav-link" href="06-mcp-was-zaehlt.html"><span class="nav-num">6</span><span>Was bei einem MCP-Server wirklich zählt</span></a></li>
+        </ul>
+      </div>
+      <div class="nav-group">
+        <p class="nav-group-title">Session 2 · Bauen</p>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="07-selbst-bauen.html"><span class="nav-num">7</span><span>Selbst bauen</span></a></li>
+          <li><a class="nav-link" href="08-ablauf.html"><span class="nav-num">8</span><span>Der Ablauf vom Auftrag zum Display</span></a></li>
+          <li><a class="nav-link" href="09-abschluss.html"><span class="nav-num">9</span><span>Abschluss und Einordnung</span></a></li>
+        </ul>
+      </div>
+      </nav>
+    </aside>
+    <main class="content">
+      <article class="article">
+<h1>KI-Agenten selbst bauen · Harness, MCP und ein E-Ink-Display</h1>
+<div class="admonition abstract"><p class="admonition-title">Worum es geht</p>
+<p>Wie baut man heute mit Sprachmodellen etwas, das <strong>tatsächlich handelt</strong>, statt
+nur zu chatten? Dieser Guide erklärt die drei Bausteine <strong>Modell, Harness und MCP</strong>.
+Er zeigt sie an einem konkreten Projekt, in dem ein Agent Wetterdaten holt, eine
+Tagesnachricht schreibt und beides auf ein TRMNL-E-Ink-Display bringt.</p>
+</div><h2 id="was-man-danach-verstanden-hat" data-title="Was man danach verstanden hat">Was man danach verstanden hat<a class="heading-anchor" href="#was-man-danach-verstanden-hat" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<ol>
+<li>Was ein <strong>Harness</strong> ist und warum er mindestens so wichtig ist wie das Modell.</li>
+<li>Wie man einen <strong>eigenen Harness</strong> aufsetzt, und zwar mit <a href="https://pi.dev" target="_blank" rel="noopener">pi</a>,
+wahlweise mit DeepSeek in der Cloud oder einem lokalen Modell über Ollama.</li>
+<li>Was <strong>MCP</strong> ist. Es ist der Standard, über den ein Agent Werkzeuge nutzt, egal
+welches Modell dahintersteckt. Im Kern ist MCP eine <strong>Erweiterung</strong> bestehender
+Technik (APIs) und keine Revolution.</li>
+<li>Worauf es bei einem <strong>MCP-Server</strong> wirklich ankommt, gezeigt an den Tools
+<code>get_weather</code>, <code>get_date_info</code> und <code>render_weather_screen</code>.</li>
+<li>Wo ein <strong>Agent</strong> sinnvoll ist und wo <strong>normaler Code</strong> besser ist (→ Seite 6, Regel 4,
+und Seite 9).</li>
+<li>Wie man mit einem <strong>Agenten</strong> einen MCP-Server baut. Das erste Tool entsteht von
+Hand, den Rest baut der Harness aus der Spezifikation (→ Seite 7).</li>
+</ol>
+<h2 id="ablauf" data-title="Ablauf">Ablauf<a class="heading-anchor" href="#ablauf" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<h3 id="session-1-verstehen" data-title="Session 1 · Verstehen">Session 1 · Verstehen<a class="heading-anchor" href="#session-1-verstehen" aria-label="Link zu diesem Abschnitt">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Seite</th>
+<th>Live-Anteil</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td><a href="01-bausteine.html">Die Bausteine</a></td>
+<td>kein Live-Teil</td>
+</tr>
+<tr>
+<td>2</td>
+<td><a href="02-harness.html">Wie ein Harness funktioniert</a></td>
+<td>eine API gemeinsam auswählen und beschreiben</td>
+</tr>
+<tr>
+<td>3</td>
+<td><a href="03-pi-aufsetzen.html">Eigenen Harness aufsetzen mit pi</a></td>
+<td>pi installieren, zwischen DeepSeek und Ollama wechseln</td>
+</tr>
+<tr>
+<td>4</td>
+<td><a href="04-mcp-grundlagen.html">MCP verstehen</a></td>
+<td>MCP Inspector, derselbe Server in pi und Claude Code</td>
+</tr>
+<tr>
+<td>5</td>
+<td><a href="05-api-zu-mcp.html">Von der API zum MCP-Server</a></td>
+<td>dieselbe API per <code>curl</code> und als Tool</td>
+</tr>
+<tr>
+<td>6</td>
+<td><a href="06-mcp-was-zaehlt.html">Was bei einem MCP-Server zählt</a></td>
+<td>Beschreibungen im Vergleich</td>
+</tr>
+</tbody></table></div>
+<div class="admonition tip"><p class="admonition-title">Wenn die Zeit knapp wird</p>
+<p>Der Kern sind die <strong>Seiten 1, 2, 4 und 6</strong>. Seite 3 (pi) lässt sich auf „einmal
+Modell wechseln“ kürzen und Seite 5 auf das Beispiel Seite an Seite.</p>
+</div><h3 id="session-2-bauen-eine-woche-spater" data-title="Session 2 · Bauen (eine Woche später)">Session 2 · Bauen (eine Woche später)<a class="heading-anchor" href="#session-2-bauen-eine-woche-spater" aria-label="Link zu diesem Abschnitt">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Seite</th>
+<th>Inhalt</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>7</td>
+<td><a href="07-selbst-bauen.html">Selbst bauen</a></td>
+<td>Server aufsetzen, <code>get_weather</code> von Hand, den Rest baut der Harness, testen und spielen</td>
+</tr>
+<tr>
+<td>8</td>
+<td><a href="08-ablauf.html">Der Ablauf vom Auftrag zum Display</a></td>
+<td>Tagesscreen und Tagesplaylist, Harness und Modell im Vergleich, bewusst kaputt machen</td>
+</tr>
+<tr>
+<td>9</td>
+<td><a href="09-abschluss.html">Abschluss und Einordnung</a></td>
+<td>Wann Agent, wann Code? Risiken, nächste Schritte</td>
+</tr>
+</tbody></table></div>
+<p>Seite 8 ist ein <strong>Baukasten</strong>. Je nachdem, wie weit wir auf Seite 7 kommen, zeigen
+wir einzelne Akte daraus.</p>
+<h2 id="das-beispielprojekt-in-einem-bild" data-title="Das Beispielprojekt in einem Bild">Das Beispielprojekt in einem Bild<a class="heading-anchor" href="#das-beispielprojekt-in-einem-bild" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<div class="diagram"><pre class="mermaid">flowchart LR
+    U([Auftrag im Chat]) --&gt; H[Harness&lt;br/&gt;Claude Code oder pi]
+    H &lt;--&gt; M[(Modell&lt;br/&gt;Claude · DeepSeek · Ollama)]
+    H &lt;--&gt;|MCP| S[MCP-Server&lt;br/&gt;get_weather&lt;br/&gt;get_date_info&lt;br/&gt;render_weather_screen]
+    S --&gt; W[Open-Meteo&lt;br/&gt;Wetter-API]
+    S --&gt;|Webhook| B[LaraPaper&lt;br/&gt;BYOS-Server&lt;br/&gt;Plugin + Playlist]
+    B --&gt;|Gerät fragt nach| D[Seeed TRMNL 7,5″&lt;br/&gt;E-Ink-Display]</pre></div>
+<p>Der Auftrag lautet sinngemäß <em>„Mach mir den Screen für heute.“</em> <strong>Das Modell
+entscheidet selbst</strong>, welche Tools es in welcher Reihenfolge aufruft. Der Harness
+führt die Aufrufe aus, und der MCP-Server erledigt die eigentliche Arbeit.</p>
+<h2 id="aufbau-jeder-seite" data-title="Aufbau jeder Seite">Aufbau jeder Seite<a class="heading-anchor" href="#aufbau-jeder-seite" aria-label="Link zu diesem Abschnitt">#</a></h2>
+<ul>
+<li><strong>Einleitung</strong> mit dem, worum es geht und was hängen bleiben soll</li>
+<li><strong>Inhalt</strong> mit Erklärungen und kurzen, kommentierten Ausschnitten</li>
+<li><strong>Live</strong> mit dem, was an dieser Stelle gezeigt wird</li>
+</ul>
+
+      </article>
+      <div class="article">
+        <nav class="pager" aria-label="Seiten blättern">
+          
+          <a class="pager-card next" href="01-bausteine.html"><span class="pager-label">Weiter →</span><span class="pager-title">1 · Die Bausteine</span></a>
+        </nav>
+        <p class="pager-hint">Blättern mit <kbd>←</kbd> <kbd>→</kbd></p>
+        <footer class="footer">TRMNL-MCP · Lernprojekt zu Harness, MCP und Agenten</footer>
+      </div>
+    </main>
+    <aside class="toc" aria-label="Auf dieser Seite"><p class="toc-title">Auf dieser Seite</p></aside>
+  </div>
+</body>
+</html>

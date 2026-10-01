@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif">
+  <title>Harness als Schichtenmodell mit Kontextfenster</title>
+  <rect width="900" height="600" rx="16" fill="#f8fafc"/>
+
+  <!-- Mensch -->
+  <text x="230" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#1f2937">Mensch: Auftrag</text>
+  <line x1="230" y1="38" x2="230" y2="60" stroke="#1f2937" stroke-width="2"/>
+  <path d="M224 54 L230 64 L236 54 Z" fill="#1f2937"/>
+
+  <!-- Schichten, von unten nach oben gezeichnet. Höhe 56, Kopf bei y=90 -->
+  <!-- 8: Modell (Fundament) y 482-538 -->
+  <path d="M80 482 L80 538 A150 22 0 0 0 380 538 L380 482 A150 22 0 0 1 80 482 Z" fill="#c2410c"/>
+  <text x="230" y="520" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">Modell (LLM)</text>
+  <text x="230" y="538" text-anchor="middle" font-size="11.5" fill="#ffedd5">denkt und entscheidet · begrenztes Kontextfenster</text>
+
+  <!-- 7: Modellanbindung y 426-482 -->
+  <path d="M80 426 L80 482 A150 22 0 0 0 380 482 L380 426 A150 22 0 0 1 80 426 Z" fill="#0f2a47"/>
+  <text x="230" y="464" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Modellanbindung</text>
+  <text x="230" y="481" text-anchor="middle" font-size="11.5" fill="#cbd5e1">API-Protokoll: Anthropic / OpenAI</text>
+
+  <!-- 6: Kontext-Management y 370-426 -->
+  <path d="M80 370 L80 426 A150 22 0 0 0 380 426 L380 370 A150 22 0 0 1 80 370 Z" fill="#163a61"/>
+  <text x="230" y="408" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Kontext-Management</text>
+  <text x="230" y="425" text-anchor="middle" font-size="11.5" fill="#cbd5e1">Verlauf sammeln, kürzen, zusammenfassen</text>
+
+  <!-- 5: System-Prompt y 314-370 -->
+  <path d="M80 314 L80 370 A150 22 0 0 0 380 370 L380 314 A150 22 0 0 1 80 314 Z" fill="#1e4a7a"/>
+  <text x="230" y="352" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">System-Prompt</text>
+  <text x="230" y="369" text-anchor="middle" font-size="11.5" fill="#cbd5e1">Rolle, Grundregeln</text>
+
+  <!-- 4: Projekt-Kontext y 258-314 -->
+  <path d="M80 258 L80 314 A150 22 0 0 0 380 314 L380 258 A150 22 0 0 1 80 258 Z" fill="#285c93"/>
+  <text x="230" y="296" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Projekt-Kontext</text>
+  <text x="230" y="313" text-anchor="middle" font-size="11.5" fill="#dbeafe">CLAUDE.md / AGENTS.md</text>
+
+  <!-- 3: Eingebaute Tools y 202-258 -->
+  <path d="M80 202 L80 258 A150 22 0 0 0 380 258 L380 202 A150 22 0 0 1 80 202 Z" fill="#3470ad"/>
+  <text x="230" y="240" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Eingebaute Tools</text>
+  <text x="230" y="257" text-anchor="middle" font-size="11.5" fill="#dbeafe">Dateien, Shell, Suche</text>
+
+  <!-- 2: Erweiterungen y 146-202 -->
+  <path d="M80 146 L80 202 A150 22 0 0 0 380 202 L380 146 A150 22 0 0 1 80 146 Z" fill="#4a86c5"/>
+  <text x="230" y="184" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Erweiterungen</text>
+  <text x="230" y="201" text-anchor="middle" font-size="11.5" fill="#eff6ff">MCP-Server, Skills, Hooks, Extensions</text>
+
+  <!-- 1: Berechtigungen y 90-146 -->
+  <path d="M80 90 L80 146 A150 22 0 0 0 380 146 L380 90 A150 22 0 0 1 80 90 Z" fill="#6aa2d8"/>
+  <ellipse cx="230" cy="90" rx="150" ry="22" fill="#9cc3e8"/>
+  <text x="230" y="95" text-anchor="middle" font-size="12" font-weight="700" fill="#0f2a47">Harness</text>
+  <text x="230" y="130" text-anchor="middle" font-size="14" font-weight="700" fill="#0f2a47">Berechtigungen</text>
+  <text x="230" y="146" text-anchor="middle" font-size="11.5" fill="#0f2a47">Was darf ohne Rückfrage passieren?</text>
+
+  <!-- Klammer Harness -->
+  <path d="M60 90 L50 90 L50 482 L60 482" fill="none" stroke="#475569" stroke-width="1.5"/>
+  <text x="40" y="290" text-anchor="middle" font-size="12" fill="#475569" transform="rotate(-90 40 290)">Harness: Werkzeugkiste</text>
+
+  <!-- Kontextfenster rechts -->
+  <text x="490" y="96" font-size="15" font-weight="700" fill="#c2410c">Kontextfenster: die Grenze des Modells</text>
+  <text x="490" y="116" font-size="12" fill="#475569">Alles, was das Modell wissen soll, muss hier hinein, in jeder Runde neu.</text>
+  <text x="490" y="134" font-size="12" fill="#c2410c">Gehört zur untersten Schicht, dem Modell.</text>
+
+  <!-- Balken 1 -->
+  <text x="490" y="160" font-size="12" font-weight="700" fill="#1f2937">Beginn der Sitzung</text>
+  <g transform="translate(490 166)">
+    <rect x="0" width="30" height="26" fill="#0f2a47"/>
+    <rect x="30" width="25" height="26" fill="#285c93"/>
+    <rect x="55" width="55" height="26" fill="#4a86c5"/>
+    <rect x="110" width="35" height="26" fill="#e3a33b"/>
+    <rect x="145" width="235" height="26" fill="#e2e8f0"/>
+    <rect x="0" width="380" height="26" fill="none" stroke="#94a3b8"/>
+    <text x="262" y="17" text-anchor="middle" font-size="11" fill="#475569">frei</text>
+  </g>
+
+  <!-- Balken 2 -->
+  <text x="490" y="214" font-size="12" font-weight="700" fill="#b91c1c">Nach langer Sitzung: voll</text>
+  <g transform="translate(490 222)">
+    <rect x="0" width="30" height="26" fill="#0f2a47"/>
+    <rect x="30" width="25" height="26" fill="#285c93"/>
+    <rect x="55" width="55" height="26" fill="#4a86c5"/>
+    <rect x="110" width="165" height="26" fill="#e3a33b"/>
+    <rect x="275" width="105" height="26" fill="#d9713a"/>
+    <rect x="0" width="380" height="26" fill="none" stroke="#b91c1c" stroke-width="2.5"/>
+  </g>
+
+  <!-- Balken 3 -->
+  <text x="490" y="278" font-size="12" font-weight="700" fill="#1f2937">Nach dem Zusammenfassen</text>
+  <g transform="translate(490 286)">
+    <rect x="0" width="30" height="26" fill="#0f2a47"/>
+    <rect x="30" width="25" height="26" fill="#285c93"/>
+    <rect x="55" width="55" height="26" fill="#4a86c5"/>
+    <rect x="110" width="45" height="26" fill="#8a6fbf"/>
+    <rect x="155" width="225" height="26" fill="#e2e8f0"/>
+    <rect x="0" width="380" height="26" fill="none" stroke="#94a3b8"/>
+    <text x="267" y="17" text-anchor="middle" font-size="11" fill="#475569">frei, aber Details sind weg</text>
+  </g>
+
+  <!-- Legende -->
+  <g font-size="11" fill="#1f2937">
+    <rect x="490" y="330" width="12" height="12" fill="#0f2a47"/><text x="507" y="340">System-Prompt</text>
+    <rect x="600" y="330" width="12" height="12" fill="#285c93"/><text x="617" y="340">Projekt-Kontext</text>
+    <rect x="720" y="330" width="12" height="12" fill="#4a86c5"/><text x="737" y="340">Tool-Beschreibungen</text>
+    <rect x="490" y="350" width="12" height="12" fill="#e3a33b"/><text x="507" y="360">Verlauf</text>
+    <rect x="600" y="350" width="12" height="12" fill="#d9713a"/><text x="617" y="360">Tool-Ergebnisse</text>
+    <rect x="720" y="350" width="12" height="12" fill="#8a6fbf"/><text x="737" y="360">Zusammenfassung</text>
+  </g>
+
+  <!-- Probleme langer Chats -->
+  <text x="490" y="398" font-size="13" font-weight="700" fill="#1f2937">Was bei langen Chats passiert</text>
+  <g font-size="12" fill="#1f2937">
+    <text x="490" y="422">• Jede Runde schickt alles erneut: Kosten und Wartezeit steigen</text>
+    <text x="490" y="444">• Informationen in der Mitte werden leichter übersehen</text>
+    <text x="490" y="466">• Zusammenfassen schafft Platz, verliert aber Details</text>
+    <text x="490" y="488">• Tool-Beschreibungen belegen Platz, bevor die Arbeit beginnt</text>
+  </g>
+</svg>
