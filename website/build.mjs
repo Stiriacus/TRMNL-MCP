@@ -21,8 +21,8 @@ const SITE_TITLE = 'KI-Agenten selbst bauen';
 
 const NAV = [
   { title: 'Start', pages: ['index'] },
-  { title: 'Session 1 · Verstehen', pages: ['01-bausteine', '02-harness', '03-pi-aufsetzen', '04-mcp-grundlagen', '05-api-zu-mcp', '06-mcp-was-zaehlt'] },
-  { title: 'Session 2 · Bauen', pages: ['07-selbst-bauen', '08-ablauf', '09-abschluss'] }
+  { title: 'Verstehen', pages: ['01-bausteine', '02-harness', '03-pi-aufsetzen', '04-mcp-grundlagen', '05-api-zu-mcp', '06-mcp-was-zaehlt'] },
+  { title: 'Bauen', pages: ['07-selbst-bauen', '08-ablauf', '09-abschluss'] }
 ];
 const ORDER = NAV.flatMap(g => g.pages);
 

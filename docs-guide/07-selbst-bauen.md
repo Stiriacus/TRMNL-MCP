@@ -1,6 +1,6 @@
 # 7 · Selbst bauen
 
-In der ersten Session ging es ums Verstehen, jetzt bauen wir. Das Fundament und das
+Die Seiten 1 bis 6 haben erklärt, wie alles zusammenhängt, jetzt bauen wir. Das Fundament und das
 erste Tool entstehen **von Hand**, damit jede Zeile verstanden ist. Alle weiteren
 Tools baut **der Harness** aus unseren Spezifikationen. So arbeitet man heute mit
 Agenten. Der Mensch legt fest, *was* entstehen soll, der Agent schreibt den Code, und

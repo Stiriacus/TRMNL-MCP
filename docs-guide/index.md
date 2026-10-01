@@ -21,9 +21,12 @@
 6. Wie man mit einem **Agenten** einen MCP-Server baut. Das erste Tool entsteht von
    Hand, den Rest baut der Harness aus der Spezifikation (→ Seite 7).
 
-## Ablauf
+## Leitfaden
 
-### Session 1 · Verstehen
+Die Seiten bauen aufeinander auf. Wir gehen sie der Reihe nach durch und machen dort
+weiter, wo wir beim letzten Mal aufgehört haben.
+
+**Verstehen**
 
 | # | Seite | Live-Anteil |
 |---|---|---|
@@ -34,11 +37,7 @@
 | 5 | [Von der API zum MCP-Server](05-api-zu-mcp.md) | dieselbe API per `curl` und als Tool |
 | 6 | [Was bei einem MCP-Server zählt](06-mcp-was-zaehlt.md) | Beschreibungen im Vergleich |
 
-!!! tip "Wenn die Zeit knapp wird"
-    Der Kern sind die **Seiten 1, 2, 4 und 6**. Seite 3 (pi) lässt sich auf „einmal
-    Modell wechseln“ kürzen und Seite 5 auf das Beispiel Seite an Seite.
-
-### Session 2 · Bauen (eine Woche später)
+**Bauen**
 
 | # | Seite | Inhalt |
 |---|---|---|
@@ -46,8 +45,11 @@
 | 8 | [Der Ablauf vom Auftrag zum Display](08-ablauf.md) | Tagesscreen und Tagesplaylist, Harness und Modell im Vergleich, bewusst kaputt machen |
 | 9 | [Abschluss und Einordnung](09-abschluss.md) | Wann Agent, wann Code? Risiken, nächste Schritte |
 
-Seite 8 ist ein **Baukasten**. Je nachdem, wie weit wir auf Seite 7 kommen, zeigen
-wir einzelne Akte daraus.
+!!! tip "Was man nicht auslassen sollte"
+    Der Kern sind die **Seiten 1, 2, 4 und 6**. Seite 3 (pi) lässt sich auf „einmal
+    Modell wechseln“ kürzen und Seite 5 auf das Beispiel Seite an Seite. Seite 8 ist
+    ein **Baukasten**, aus dem wir die Akte zeigen, für die Seite 7 die Grundlage
+    geschaffen hat.
 
 ## Das Beispielprojekt in einem Bild
 
