@@ -28,5 +28,5 @@
   <rect x="490" y="160" width="140" height="40" rx="3" fill="#f1e4cc" stroke="#8c6a3f"/>
   <text x="560" y="185" text-anchor="middle" font-size="15" fill="#2e3135">Datenbank</text>
   <rect x="490" y="235" width="140" height="40" rx="3" fill="#f1e4cc" stroke="#8c6a3f"/>
-  <text x="560" y="260" text-anchor="middle" font-size="15" fill="#2e3135">Wetter-API</text>
+  <text x="560" y="260" text-anchor="middle" font-size="15" fill="#2e3135">JokeAPI</text>
 </svg>

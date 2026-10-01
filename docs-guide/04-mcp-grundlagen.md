@@ -82,9 +82,9 @@ Anbieter.
 
 | Baustein | Wer steuert ihn? | Beispiel |
 |---|---|---|
-| **Tools** | das **Modell** entscheidet, wann sie aufgerufen werden | `get_weather`, `render_weather_screen` |
+| **Tools** | das **Modell** entscheidet, wann sie aufgerufen werden | `get_joke`, `render_joke_screen` |
 | **Resources** | die **Anwendung** entscheidet, was in den Kontext kommt | z. B. aktueller Screen als Bild, Layout-Spezifikation |
-| **Prompts** | der **Mensch** wählt sie aus (oft als Slash-Befehl) | z. B. `/tagesscreen` |
+| **Prompts** | der **Mensch** wählt sie aus (oft als Slash-Befehl) | z. B. `/witz` |
 
 In der Praxis sind Tools mit Abstand **am wichtigsten**. Unser Projekt nutzt nur
 Tools.
@@ -124,22 +124,22 @@ können.
 ```json
 → { "jsonrpc": "2.0", "id": 2, "method": "tools/list" }
 ← { "jsonrpc": "2.0", "id": 2, "result": { "tools": [{
-      "name": "get_weather",
-      "description": "Liefert die aktuellen Wetterdaten … Nutze dieses Tool immer, wenn …",
+      "name": "get_joke",
+      "description": "Liefert einen kurzen, jugendfreien Witz … Nutze es, wenn …",
       "inputSchema": { "type": "object",
-        "properties": { "lat": { "type": "number", "minimum": -90, "maximum": 90 },
-                        "lon": { "type": "number", "minimum": -180, "maximum": 180 } },
-        "required": ["lat", "lon"] } }] } }
+        "properties": { "category": { "type": "string", "enum": ["Programming", "Any"] },
+                        "lang": { "type": "string", "enum": ["de", "en"] },
+                        "topic": { "type": "string", "maxLength": 30 } } } }] } }
 ```
 
 **3. Der Tool-Aufruf** passiert, sobald das Modell `tool_use` zurückgibt.
 
 ```json
 → { "jsonrpc": "2.0", "id": 3, "method": "tools/call",
-    "params": { "name": "get_weather", "arguments": { "lat": 48.77, "lon": 11.43 } } }
+    "params": { "name": "get_joke", "arguments": { "category": "Programming", "lang": "de" } } }
 ← { "jsonrpc": "2.0", "id": 3, "result": {
       "content": [{ "type": "text",
-                    "text": "{\"temperature\":18,\"condition\":\"Klar\",…}" }],
+                    "text": "{\"setup\":\"Was macht ein Informatiker …\",…}" }],
       "isError": false } }
 ```
 
@@ -196,12 +196,12 @@ Das ist der Kern von MCP.
     cd server
     npx @modelcontextprotocol/inspector npx tsx src/mcp-server.ts
     ```
-    Im Browser **Connect** klicken, den Tab **Tools** öffnen und `get_weather` mit
-    Koordinaten aufrufen. Dabei die Nachrichten im History-Bereich zeigen, denn sie
+    Im Browser **Connect** klicken, den Tab **Tools** öffnen und `get_joke` mit einer
+    Kategorie aufrufen. Dabei die Nachrichten im History-Bereich zeigen, denn sie
     sind genau das JSON von oben. Das ist ein MCP-Server **ganz ohne KI**. Das Modell
     ist nur ein weiterer Client.
 
 !!! example "Denselben Server in beiden Harnesses zeigen"
     1. In pi `/mcp` aufrufen. `trmnl-display` ist mit seinen Tools sichtbar.
     2. In Claude Code `/mcp` aufrufen. Es ist derselbe Server mit denselben Tools.
-    3. In beiden dieselbe Frage stellen, etwa *„Wie ist das Wetter in Ingolstadt?“*
+    3. In beiden dieselbe Frage stellen, etwa *„Erzähl mir einen Programmierwitz.“*

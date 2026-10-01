@@ -11,7 +11,7 @@ MCP in standardisierter Form dazu.
 | Begriff | Was es ist | Im Projekt |
 |---|---|---|
 | **Modell (LLM)** | Eine Funktion, in die Text hineingeht und aus der Text herauskommt. Kein Gedächtnis, kein Zugriff auf irgendetwas. | Claude, DeepSeek, ein lokales Qwen über Ollama |
-| **Tool** | Eine Funktion mit Name, Beschreibung und Parameterschema, die das Modell *anfordern* kann | `get_weather(lat, lon)` |
+| **Tool** | Eine Funktion mit Name, Beschreibung und Parameterschema, die das Modell *anfordern* kann | `get_joke(category, lang)` |
 | **Harness** | Die Werkzeugkiste um das Modell. Sie verwaltet den Chat-Kontext, stellt Tools bereit, führt die vom Modell angeforderten Aufrufe aus und prüft Berechtigungen. **Ohne Modell passiert nichts.** | Claude Code, pi |
 | **Agent** | Modell, Harness, Tools und Auftrag zusammen, also ein System, das selbstständig mehrere Schritte bis zum Ziel geht | „Mach den Screen für heute“ |
 | **MCP** | Offenes Protokoll, über das ein Harness Tools aus externen Servern einbindet | Unser `trmnl-display`-Server |
@@ -19,7 +19,7 @@ MCP in standardisierter Form dazu.
 ## Das Modell ruft nichts selbst auf
 
 Das ist die wichtigste Einsicht. Das Modell schreibt nur eine **strukturierte Bitte**,
-etwa „ich möchte `get_weather` mit `lat=48.77, lon=11.43` aufrufen“. Ausgeführt
+etwa „ich möchte `get_joke` mit `category=Programming, lang=de` aufrufen“. Ausgeführt
 wird der Aufruf vom **Harness**. Das Ergebnis kommt als Text zurück in den Kontext, und
 das Modell macht weiter.
 
@@ -31,15 +31,15 @@ sequenceDiagram
     participant T as Tool (MCP-Server)
     U->>H: "Mach den Screen für heute"
     H->>M: Auftrag + Liste verfügbarer Tools
-    M-->>H: tool_use: get_weather(48.77, 11.43)
+    M-->>H: tool_use: get_joke("Programming", "de")
     H->>T: ausführen
-    T-->>H: {"temperature": 18, "condition": "Klar", …}
+    T-->>H: {"setup": "Was macht ein Informatiker …", "punchline": "…"}
     H->>M: Ergebnis
     M-->>H: tool_use: get_date_info()
     H->>T: ausführen
-    T-->>H: {"formatted": "30 / 09 / 2026", "isoWeek": 40}
+    T-->>H: {"weekday": "Mittwoch", "formatted": "30 / 09 / 2026", "isoWeek": 40}
     H->>M: Ergebnis
-    M-->>H: tool_use: render_weather_screen(…, message: "Klarer Mittwoch …")
+    M-->>H: tool_use: render_joke_screen(joke: {…}, date: {…})
     H->>T: ausführen
     T-->>H: {"filename": "screen-….png"}
     H->>M: Ergebnis
@@ -77,5 +77,5 @@ Daraus folgen drei Punkte, die im weiteren Verlauf immer wieder auftauchen.
 |---|---|
 | Modell | der Handwerker, der weiß, was zu tun ist, aber kein Werkzeug dabeihat |
 | Harness | die Werkstatt mit Werkbank, Notizblock (Kontext) und Sicherheitsregeln, in der ohne Handwerker alles stillsteht |
-| Tools | die Werkzeuge wie Wetterstation, Drucker oder Kalender |
+| Tools | die Werkzeuge wie Witzesammlung, Drucker oder Kalender |
 | MCP | das Handbuch im Einheitsformat, das jedem Werkzeug beiliegt und erklärt, was es kann, wann man es nimmt und wie man es bedient. Dazu kommt ein genormter Anschluss, damit jede Werkstatt es nutzen kann |

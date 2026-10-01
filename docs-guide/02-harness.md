@@ -51,11 +51,11 @@ Aufruf aus mehreren Quellen zusammen.
 | Teil | Wer schreibt es? | Wann ist es im Kontext? | Beispiel |
 |---|---|---|---|
 | **System-Prompt** | der Harness (vom Hersteller, anpassbar) | immer, ganz vorne | „Du bist ein Coding-Agent. Frag nach, bevor du etwas löschst.“ |
-| **Projekt-Kontext** | das Team, als Datei im Projekt | immer | in `AGENTS.md` etwa „Tagesmessages max. 120 Zeichen, keine Emojis.“ |
-| **Tool-Beschreibungen** | wer das Tool gebaut hat (eingebaut oder MCP) | immer, oder erst bei Bedarf | bei `get_weather` etwa „Liefert die aktuellen Wetterdaten …“ |
+| **Projekt-Kontext** | das Team, als Datei im Projekt | immer | in `AGENTS.md` etwa „Witze nie selbst erfinden, Pointe max. 100 Zeichen, keine Emojis.“ |
+| **Tool-Beschreibungen** | wer das Tool gebaut hat (eingebaut oder MCP) | immer, oder erst bei Bedarf | bei `get_joke` etwa „Liefert einen kurzen, jugendfreien Witz …“ |
 | **Skill-Übersicht** | wer den Skill geschrieben hat | nur Name und eine Zeile | `display-layout` mit „Regeln für E-Ink-Layouts“ |
 | **User-Prompt** | der Mensch | pro Auftrag | „Mach den Screen für heute.“ |
-| **Verlauf und Tool-Ergebnisse** | entsteht während der Arbeit | wächst mit jeder Runde | `{"temperature": 18, …}` |
+| **Verlauf und Tool-Ergebnisse** | entsteht während der Arbeit | wächst mit jeder Runde | `{"setup": "Was sind Bits?", …}` |
 
 System-Prompt und User-Prompt sind die beiden Enden. Der System-Prompt setzt den
 Rahmen (Rolle, Regeln, verfügbare Werkzeuge), der User-Prompt den konkreten Auftrag.
@@ -73,8 +73,8 @@ vollständige Anleitung nach. Das funktioniert wie ein Regal voller Handbücher,
 dem die Titel immer sichtbar sind und nur aufgeschlagen wird, was gerade gebraucht
 wird. **Das spart Kontext.**
 
-Ein Beispiel ist ein Skill `tagesmessage` mit den Regeln für gute Display-Texte
-(Länge, Ton, keine Emojis, Beispiele). Beim Auftrag „Mach den Screen für heute“ lädt
+Ein Beispiel ist ein Skill `witz-des-tages` mit den Regeln fürs Übersetzen und
+Kürzen von Witzen (Länge, Pointe erhalten, keine Emojis, Beispiele). Beim Auftrag „Mach den Screen für heute“ lädt
 das Modell ihn, bei „Erklär mir diesen Code“ nicht.
 
 ### Was wofür?
@@ -82,9 +82,9 @@ das Modell ihn, bei „Erklär mir diesen Code“ nicht.
 | | Liefert | Führt selbst etwas aus? | Im Kontext | Beispiel |
 |---|---|---|---|---|
 | **`AGENTS.md`** | Dauerwissen fürs Projekt | nein | immer, komplett | Stilregeln, Projektaufbau |
-| **Skill** | Anleitung und Vorlagen für eine Aufgabe | nein, das Modell nutzt dafür die vorhandenen Tools | Übersicht immer, Inhalt bei Bedarf | Regeln für Tagesmessages |
+| **Skill** | Anleitung und Vorlagen für eine Aufgabe | nein, das Modell nutzt dafür die vorhandenen Tools | Übersicht immer, Inhalt bei Bedarf | Regeln für den Witz des Tages |
 | **Prompt-Template** | einen gespeicherten User-Prompt | nein | wenn der Mensch ihn aufruft | `/screen` |
-| **MCP-Server** | Werkzeuge | **ja**, im eigenen Prozess | Tool-Beschreibungen | `get_weather` |
+| **MCP-Server** | Werkzeuge | **ja**, im eigenen Prozess | Tool-Beschreibungen | `get_joke` |
 
 !!! tip "Merksatz"
     **`AGENTS.md`** ist, was immer gilt. Ein **Skill** ist, was manchmal gebraucht wird.
@@ -107,16 +107,16 @@ Dinge.
 - Die **Beschreibung** entscheidet, wie gut ein Tool nutzbar ist. Das Modell kennt
   nur den Text. Ob es ein Tool im richtigen Moment mit den richtigen Werten aufruft,
   steht und fällt mit dieser Beschreibung (→ [Seite 6](06-mcp-was-zaehlt.md)).
-- **Tool-Ergebnisse** sollten knapp sein. Eine Wetter-API liefert Hunderte Felder,
-  unser `get_weather` gibt nur 7 zurück.
+- **Tool-Ergebnisse** sollten knapp sein. Die JokeAPI liefert 9 Felder samt sechs
+  Filter-Kennzeichen, unser `get_joke` gibt nur 3 zurück.
 - Moderne Harnesses laden Tools deshalb **erst bei Bedarf** (in Claude Code per Tool
   Search, in pi per `exposure: "deferred"`), oder sie lassen das Modell Tools per
   Code kombinieren (in pi der *Codemode*).
 
 ## Zum Anfassen · eine API auswählen und beschreiben
 
-Die [JokeAPI](https://v2.jokeapi.dev/endpoints) soll dem Agenten Witze fürs Display
-liefern. Sie hat **10 Endpunkte**.
+Die [JokeAPI](https://v2.jokeapi.dev/endpoints) ist die Datenquelle unseres Projekts.
+Sie soll dem Agenten den Witz des Tages fürs Display liefern und hat **10 Endpunkte**.
 
 | Endpunkt | Zweck |
 |---|---|
@@ -163,8 +163,9 @@ liefern. Sie hat **10 Endpunkte**.
     - Der **Name** ist `get_joke`.
     - Die **Beschreibung** lautet *„Liefert einen kurzen, jugendfreien Witz aus der
       Kategorie Programmierung oder gemischt. Mit `topic` kann nach einem Stichwort
-      gefiltert werden (z. B. ‚coffee‘ für Kaffeewitze). Nutze es für auflockernde
-      Display-Inhalte.“*
+      gefiltert werden (z. B. ‚coffee‘ für Kaffeewitze). Die Stichwortsuche
+      funktioniert praktisch nur mit `lang=en`, der deutsche Bestand ist klein. Nutze
+      es, wenn ein Screen einen Witz zeigen soll. Erfinde nie selbst einen Witz.“*
     - Die **Parameter** sind `category` (`Programming` oder `Any`), `lang` (`de` oder
       `en`) und optional `topic`.
     - Die **Rückgabe** ist immer gleich, egal ob `single` oder `twopart`, nämlich
@@ -173,4 +174,5 @@ liefern. Sie hat **10 Endpunkte**.
 
     Aus 10 Endpunkten und 9 Feldern wird ein Tool mit **3 Parametern und 3 Feldern**.
     Genau diese **Auswahl** ist die eigentliche Arbeit beim Bau eines MCP-Servers.
-    Details stehen in [docs-dev/07](../docs-dev/07-weitere-mcp-tools.md#get_joke).
+    Gebaut wird das Tool auf [Seite 7](07-selbst-bauen.md), der vollständige Vertrag
+    steht in [docs-dev/03](../docs-dev/03-mcp-tool-spezifikation.md#get_joke).

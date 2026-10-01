@@ -50,15 +50,15 @@ aussehen.
 
 === "Anthropic Messages"
     ```json
-    { "type": "tool_use", "id": "toolu_01", "name": "get_weather",
-      "input": { "lat": 48.77, "lon": 11.43 } }
+    { "type": "tool_use", "id": "toolu_01", "name": "get_joke",
+      "input": { "category": "Programming", "lang": "de" } }
     ```
 
 === "OpenAI Chat Completions"
     ```json
     { "tool_calls": [{ "id": "call_01", "type": "function",
-      "function": { "name": "get_weather",
-                    "arguments": "{\"lat\":48.77,\"lon\":11.43}" } }] }
+      "function": { "name": "get_joke",
+                    "arguments": "{\"category\":\"Programming\",\"lang\":\"de\"}" } }] }
     ```
 
 OpenAI übergibt die Argumente als **String** mit JSON darin, Anthropic dagegen als
@@ -118,8 +118,8 @@ das Modell aus.
 
 Mit wenigen Dateien wird pi zum **Spezialisten** für dieses Projekt.
 
-- **`AGENTS.md`** enthält Projektwissen, zum Beispiel *„Tagesmessages immer nach den
-  Regeln in docs-dev/04-prompt-design.md schreiben“*.
+- **`AGENTS.md`** enthält Projektwissen, zum Beispiel *„Witze immer nach den Regeln
+  in docs-dev/04-prompt-design.md übersetzen und kürzen“*.
 - Ein **Prompt-Template** in `.pi/prompts/screen.md` macht aus dem ganzen Auftrag der
   Demo den Slash-Befehl `/screen`.
 - Ein **Skill** bündelt Anleitung und Hilfsdateien, die pi nur bei Bedarf lädt

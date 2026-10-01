@@ -15,7 +15,7 @@ Code gibt es **noch keinen**.
 |---|---|
 | 1. MCP-Server aufsetzen | wir |
 | 2. Starten und prüfen | wir |
-| 3. Das Schema von `get_weather` durchgehen | wir |
+| 3. `get_joke` bauen und durchgehen | wir |
 | 4. Die Beschreibung selbst schreiben | wir |
 | 5. Alle anderen Tools | **der Harness** |
 | 6. Testen und Spielereien | alle |
@@ -69,59 +69,56 @@ Im Browser **Connect** und dann **Tools** wählen und `hello` mit einem Namen au
     JSON-Strom. Einmal ausprobieren lohnt sich, denn diesen Fehler macht **jeder genau
     einmal**.
 
-## Schritt 3 · Das Schema von `get_weather` durchgehen
+## Schritt 3 · `get_joke` bauen und durchgehen
 
-Das erste echte Tool bauen wir **von Hand**. Den Code (Logik in `lib/weather.ts`,
-Hülle in `tools/getWeather.ts`) übernehmen wir aus der
-[Bauanleitung](../docs-dev/anleitung.md), Phase 3 Teil A, und gehen ihn gemeinsam
-durch. Wichtiger als der Code sind die **Entscheidungen dahinter**.
-
-Die Wetterdaten kommen von [Open-Meteo](https://open-meteo.com), frei und ohne
-API-Key. So sieht die Antwort roh aus.
-
-```bash
-curl "https://api.open-meteo.com/v1/forecast?latitude=48.77&longitude=11.43&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1"
-```
-
-```json
-{
-  "latitude": 48.78, "longitude": 11.440001, "generationtime_ms": 0.089,
-  "utc_offset_seconds": 7200, "timezone": "Europe/Berlin", "elevation": 375.0,
-  "current_units": { "temperature_2m": "°C", "weather_code": "wmo code", … },
-  "current": { "time": "2026-10-01T13:00", "temperature_2m": 21.6, "weather_code": 3 },
-  "daily_units": { … },
-  "daily": { "time": ["2026-10-01"], "temperature_2m_max": [24.3], "temperature_2m_min": [7.3] }
-}
-```
-
-??? question "Warum `lat`/`lon` als Eingabe und nicht einfach den Städtenamen?"
-    Ein Städtename bräuchte eine zweite API (Geocoding) und ist mehrdeutig, etwa
-    Frankfurt am Main oder an der Oder. Zahlen kann **das Schema prüfen**
-    (`min(-90).max(90)`), und die Koordinaten einer Stadt kennt jedes Modell. Der
-    Preis ist, dass das Modell **falsche Koordinaten** schicken *könnte*, ohne dass das
-    Schema es merkt (→ [Seite 6](06-mcp-was-zaehlt.md), Regel 2).
-
-??? question "Welche Felder geben wir zurück?"
-    ```json
-    { "temperature": 22, "condition": "Bedeckt", "weatherCode": 3,
-      "tempMin": 7, "tempMax": 24, "unit": "celsius", "fetchedAt": "…" }
-    ```
-    - `weather_code: 3` versteht das Modell nicht zuverlässig, **„Bedeckt“ schon**.
-      Die Übersetzung ist eine feste Tabelle und gehört in Code (Regel 4).
-    - **Temperaturen sind gerundet**, denn auf dem Display steht „22°“ und nicht „21.6“.
-    - `generationtime_ms`, `elevation` und `*_units` **fliegen raus**, weil sie nur
-      Ballast im Kontext wären.
-
-??? question "Was passiert, wenn das Modell `lat: \"Berlin\"` schickt?"
-    Der Aufruf erreicht **unseren Code gar nicht**. Das Schema lehnt ihn ab, und das
-    Modell bekommt eine Fehlermeldung, mit der es sich meist selbst korrigiert.
+Auf [Seite 2](02-harness.md#zum-anfassen-eine-api-auswahlen-und-beschreiben) haben wir
+entschieden, *was* das Tool können soll, nämlich ein Endpunkt, 3 Parameter und 3
+Felder. Jetzt bauen wir es **von Hand**. Den Code (Logik in `lib/jokes.ts`, Hülle in
+`tools/getJoke.ts`) übernehmen wir aus der [Bauanleitung](../docs-dev/anleitung.md),
+Phase 3 Teil A, und gehen ihn gemeinsam durch. Wichtiger als der Code sind die
+**Entscheidungen dahinter**.
 
 ```ts
 inputSchema: z.object({
-  lat: z.number().min(-90).max(90).describe('Breitengrad, WGS84, z. B. 48.77'),
-  lon: z.number().min(-180).max(180).describe('Längengrad, WGS84, z. B. 11.43')
+  category: z.enum(['Programming', 'Any']).default('Programming'),
+  lang: z.enum(['de', 'en']).default('de'),
+  topic: z.string().max(30).optional().describe('Stichwort, z. B. "coffee"')
 })
 ```
+
+??? question "Warum `z.enum` und nicht einfach ein freier Text für die Kategorie?"
+    Die API kennt nur feste Namen. Mit `z.enum` steht die Auswahl **im Schema**, das
+    Modell sieht sie also schon in `tools/list`. Schickt es trotzdem `"Witze"`,
+    lehnt das Schema den Aufruf ab, bevor unser Code läuft, und das Modell bekommt
+    eine Fehlermeldung, mit der es sich meist selbst korrigiert. Bei einem freien
+    Text käme stattdessen eine Fehlermeldung der API zurück, die für das Modell
+    schwerer zu deuten ist.
+
+??? question "Warum ist `safe-mode` kein Parameter?"
+    Ob ein Witz im Flur jugendfrei sein muss, ist **keine Entscheidung für das
+    Modell**. Deshalb steht `safe-mode` fest im Code. Beim Testen ist dabei etwas
+    aufgefallen, das in keiner Doku steht. `URLSearchParams.set('safe-mode', '')`
+    erzeugt `safe-mode=` mit leerem Wert, und den **ignoriert die API
+    stillschweigend**. Dann kommen auch Witze mit `"safe": false`. Unser Code sendet
+    deshalb `safe-mode=true` und prüft zusätzlich, ob die Antwort wirklich `safe` ist.
+
+??? question "Welche Felder geben wir zurück?"
+    ```json
+    { "setup": "Was macht ein Informatiker, wenn sein Wagen nicht mehr anspringt?",
+      "punchline": "Aussteigen, einsteigen und nochmal starten.", "lang": "de" }
+    ```
+    - Die API kennt zwei Formate, `single` mit einem Feld `joke` und `twopart` mit
+      `setup` und `delivery`. Wir geben **immer dieselbe Form** zurück. Bei Einzeilern
+      bleibt `punchline` leer. Das Modell muss sich um die Unterschiede nicht kümmern.
+    - `flags`, `id`, `safe` und `category` **fliegen raus**, weil sie nur Ballast im
+      Kontext wären.
+
+??? question "Was passiert bei `topic: \"kaffee\"` und `lang: \"de\"`?"
+    Die API antwortet mit HTTP 400 und `"code": 106`, kein Treffer. Der deutsche
+    Bestand hat nur rund 30 Witze. Unser Tool macht daraus eine **Handlungsempfehlung**,
+    nämlich *„Kein Witz zu diesem Stichwort. Versuche es ohne topic oder mit
+    lang=en.“* Ein gutes Modell versucht es danach auf Englisch und übersetzt den
+    Witz selbst (→ [Seite 6](06-mcp-was-zaehlt.md), Regel 3).
 
 ## Schritt 4 · Die Beschreibung selbst schreiben
 
@@ -130,20 +127,20 @@ Was tut es, und was kommt heraus? Woher kommen die Eingaben? Wann soll ich es
 nutzen und wann nicht?
 
 ??? question "Unser Vorschlag zum Vergleich"
-    *„Liefert die aktuellen Wetterdaten (Temperatur, Wetterzustand als Text,
-    Tages-Min- und Maximaltemperatur) für einen Standort anhand von Breiten- und
-    Längengrad. Nutze dieses Tool immer dann, wenn eine Tagesmessage oder ein
-    Display-Screen aktuelle Wetterinformationen enthalten soll. Ruft die kostenlose
-    Open-Meteo-API auf, es wird kein API-Key benötigt.“*
+    *„Liefert einen kurzen, jugendfreien Witz aus der Kategorie Programmierung oder
+    gemischt. Mit topic kann nach einem Stichwort gefiltert werden (z. B. ‚coffee‘
+    für Kaffeewitze). Die Stichwortsuche funktioniert praktisch nur mit lang=en, der
+    deutsche Bestand ist klein. Nutze es, wenn ein Screen einen Witz zeigen soll.
+    Erfinde nie selbst einen Witz, sondern rufe das Tool bei Bedarf erneut auf.“*
 
 Dann **sofort ausprobieren**. Den Server in Claude Code oder pi anbinden
 (→ [Seite 4](04-mcp-grundlagen.md#denselben-server-in-zwei-harnesses-anbinden)) und
-fragen *„Wie ist das Wetter in Hamburg?“* Findet das Modell das Tool? Setzt es die
-Koordinaten selbst ein?
+fragen *„Erzähl mir einen Kaffeewitz auf Deutsch.“* Findet das Modell das Tool?
+Kommt es von selbst auf `topic: "coffee"` und `lang: "en"` und übersetzt den Witz?
 
 ## Schritt 5 · Den Rest baut der Harness
 
-`get_weather` ist jetzt **die Vorlage** für Aufbau, Fehlerbehandlung und die Trennung
+`get_joke` ist jetzt **die Vorlage** für Aufbau, Fehlerbehandlung und die Trennung
 von `lib/` und `tools/`. Der Agent orientiert sich daran. Der Auftrag an Claude Code
 oder pi lautet etwa so.
 
@@ -151,7 +148,7 @@ oder pi lautet etwa so.
 Lies docs-dev/03-mcp-tool-spezifikation.md, Abschnitt "get_date_info". Baue das Tool
 genau nach Spezifikation: Logik in server/src/lib/dateInfo.ts (nur die eingebaute
 Date-API, keine Bibliotheken), MCP-Hülle in server/src/tools/getDateInfo.ts, im
-selben Aufbau wie getWeather.ts. Übernimm die Beschreibung wörtlich.
+selben Aufbau wie getJoke.ts. Übernimm die Beschreibung wörtlich.
 ```
 
 Nach demselben Muster gibt es je einen Auftrag pro Tool.
@@ -159,8 +156,8 @@ Nach demselben Muster gibt es je einen Auftrag pro Tool.
 | Tool | Spezifikation | Worauf beim Prüfen achten |
 |---|---|---|
 | `get_date_info` | [docs-dev/03](../docs-dev/03-mcp-tool-spezifikation.md) | Kalenderwoche richtig (Donnerstagsregel)? Keine Bibliothek? |
-| `render_weather_screen` | docs-dev/02 und 03 | Layout 800×480, Datei unter 90 KB? |
-| `get_joke`, `get_quote_of_the_day`, `get_on_this_day`, `get_http_status` als **zweiter Server** `tagesinhalte` | [docs-dev/07](../docs-dev/07-weitere-mcp-tools.md) | Rückgabe knapp? Weiche Trennstriche entfernt? |
+| `render_joke_screen` | docs-dev/02 und 03 | Layout 800×480, Einzeiler ohne Pointe? Datei unter 90 KB? |
+| `get_quote_of_the_day`, `get_on_this_day`, `get_http_status` als **zweiter Server** `tagesinhalte` | [docs-dev/07](../docs-dev/07-weitere-mcp-tools.md) | Rückgabe knapp? Weiche Trennstriche entfernt? |
 | `update_plugin` *(nur mit LaraPaper)* | docs-dev/07 | Plugin-UUIDs nur aus `.env`, nie im Schema? |
 
 Unsere Rolle ist jetzt **Review**. Stimmen Feldnamen und Beschreibung mit der
@@ -183,8 +180,9 @@ Mach mir den Screen für heute.
 
 Danach ist Zeit zum Spielen.
 
-- **Den Ton ändern** mit *„Schreib die Tagesmessage heute als Wetterbericht aus dem
-  Mittelalter.“* Nichts am Server ändert sich, nur der Auftrag.
+- **Ein Thema vorgeben** mit *„Heute bitte einen Witz über Kaffee, auf Deutsch.“*
+  Nichts am Server ändert sich, nur der Auftrag. Das Modell muss selbst auf
+  `lang=en` ausweichen und übersetzen.
 - **Einen HTTP-Witz** mit *„Such dir einen lustigen HTTP-Statuscode aus und schreib
   einen Witz dazu.“* Das Tool liefert nur den Code, der Witz kommt vom Modell.
 - **Die Beschreibung verschlechtern**, also eine Tool-Beschreibung auf ein Wort kürzen

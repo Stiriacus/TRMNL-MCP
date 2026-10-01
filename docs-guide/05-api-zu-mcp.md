@@ -45,8 +45,10 @@ flowchart LR
 ## Ein Beispiel Seite an Seite
 
 Auf [Seite 2](02-harness.md#zum-anfassen-eine-api-auswahlen-und-beschreiben) haben wir
-bei der JokeAPI entschieden, *was* das Tool können soll. Hier sieht man, wie das im
-Code aussieht und was beim Bereinigen noch auffällt, das in keiner API-Doku steht.
+bei der JokeAPI entschieden, *was* das Tool können soll, gebaut wird es auf
+[Seite 7](07-selbst-bauen.md). Hier dasselbe Muster an einer zweiten API, der
+Wikipedia. Man sieht, wie die Auswahl im Code aussieht und was beim Bereinigen noch
+auffällt, das in keiner API-Doku steht.
 
 So nutzt ein **Entwickler** die **API**.
 
@@ -99,20 +101,19 @@ Der Adapter leistet vier Dinge.
 
 ## Weitere Kandidaten mit großer Wirkung
 
-Alle sind getestet und frei ohne API-Key nutzbar.
+Die JokeAPI ist schon unser Haupttool. Diese Quellen kommen dazu, alle sind getestet
+und frei ohne API-Key nutzbar.
 
 | Idee | API | Tool | Besonderheit |
 |---|---|---|---|
 | HTTP-Status als Witz | [http.dog](https://http.dog) oder [http.cat](https://http.cat) | `get_http_status(code)` | Liefert Titel und Bild. **Den Witz schreibt das Modell**, z. B. zu `418 I'm a teapot` |
-| Programmierwitz | [JokeAPI](https://sv443.net/jokeapi/v2/) | `get_joke(category, lang)` | Deutsch verfügbar (`lang=de`), `safe-mode` filtert Unpassendes |
-| Kaffee-Witz | JokeAPI mit `contains=coffee` | derselbe `get_joke` mit Parameter `topic` | Ein Tool mit vielen Einsatzzwecken, gesteuert über das Schema |
 | Zitat des Tages | [ZenQuotes](https://zenquotes.io) | `get_quote_of_the_day()` | Englisch, das Modell kann übersetzen. Limit 5 Anfragen pro 30 s, **Quellenangabe Pflicht** |
 | Heute in der Geschichte | [Wikipedia „On this day“](https://api.wikimedia.org/wiki/Feed_API/Reference/On_this_day) | `get_on_this_day(month, day)` | Deutsch, muss bereinigt werden (s. o.) |
 
 !!! info "Easter Egg für die Präsentation"
     Status `418 I'm a teapot` stammt aus dem Aprilscherz-RFC 2324, dem
     *Hyper Text Coffee Pot Control Protocol*. Das ist die **perfekte Brücke** zwischen
-    „HTTP-Witz“ und „Kaffee-Ecke“ auf demselben Screen.
+    „HTTP-Witz“ und „Kaffeewitz“ in derselben Playlist.
 
 ## Die Tagesplaylist als Ergebnis
 
@@ -122,23 +123,23 @@ zusammen.
 ```mermaid
 flowchart LR
     subgraph S1 [MCP-Server tagesinhalte]
-        J[get_joke]
         Q[get_quote_of_the_day]
         O[get_on_this_day]
         HS[get_http_status]
     end
     subgraph S2 [MCP-Server trmnl-display]
+        J[get_joke]
+        R[render_joke_screen]
         U[update_plugin]
-        R[render_weather_screen]
     end
     AG[Agent] --> S1
     AG --> S2
-    S2 -->|Webhook| LP[LaraPaper-Playlist<br/>Wetter · Zitat · Geschichte · Witz]
+    S2 -->|Webhook| LP[LaraPaper-Playlist<br/>Witz · Zitat · Geschichte · HTTP-Status]
 ```
 
-Der Auftrag lautet *„Stell die Playlist für heute zusammen mit Wetter-Screen, einem
-Zitat, einem Ereignis von heute aus der Geschichte und zum Abschluss einem
-Kaffee-Witz.“*
+Der Auftrag lautet *„Stell die Playlist für heute zusammen mit einem Kaffeewitz,
+einem Zitat, einem Ereignis von heute aus der Geschichte und zum Abschluss einem
+HTTP-Status mit einem Spruch dazu.“*
 
 Der Agent sammelt, **wählt aus, übersetzt, kürzt** auf Display-Länge und befüllt die
 Plugins. Das sind genau die Aufgaben, bei denen ein **Sprachmodell stark** ist. Das

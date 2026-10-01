@@ -3,8 +3,9 @@
 !!! abstract "Worum es geht"
     Wie baut man heute mit Sprachmodellen etwas, das **tatsächlich handelt**, statt
     nur zu chatten? Dieser Guide erklärt die drei Bausteine **Modell, Harness und MCP**.
-    Er zeigt sie an einem konkreten Projekt, in dem ein Agent Wetterdaten holt, eine
-    Tagesnachricht schreibt und beides auf ein TRMNL-E-Ink-Display bringt.
+    Er zeigt sie an einem konkreten Projekt, in dem ein Agent einen Witz aus der
+    JokeAPI holt, ihn auswählt, übersetzt und kürzt und als „Witz des Tages“ auf ein
+    TRMNL-E-Ink-Display bringt.
 
 ## Was man danach verstanden hat
 
@@ -15,7 +16,7 @@
    welches Modell dahintersteckt. Im Kern ist MCP eine **Erweiterung** bestehender
    Technik (APIs) und keine Revolution.
 4. Worauf es bei einem **MCP-Server** wirklich ankommt, gezeigt an den Tools
-   `get_weather`, `get_date_info` und `render_weather_screen`.
+   `get_joke`, `get_date_info` und `render_joke_screen`.
 5. Wo ein **Agent** sinnvoll ist und wo **normaler Code** besser ist (→ Seite 6, Regel 4,
    und Seite 9).
 6. Wie man mit einem **Agenten** einen MCP-Server baut. Das erste Tool entsteht von
@@ -41,8 +42,8 @@ weiter, wo wir beim letzten Mal aufgehört haben.
 
 | # | Seite | Inhalt |
 |---|---|---|
-| 7 | [Selbst bauen](07-selbst-bauen.md) | Server aufsetzen, `get_weather` von Hand, den Rest baut der Harness, testen und spielen |
-| 8 | [Der Ablauf vom Auftrag zum Display](08-ablauf.md) | Tagesscreen und Tagesplaylist, Harness und Modell im Vergleich, bewusst kaputt machen |
+| 7 | [Selbst bauen](07-selbst-bauen.md) | Server aufsetzen, `get_joke` von Hand, den Rest baut der Harness, testen und spielen |
+| 8 | [Der Ablauf vom Auftrag zum Display](08-ablauf.md) | Witz des Tages und Tagesplaylist, Harness und Modell im Vergleich, bewusst kaputt machen |
 | 9 | [Abschluss und Einordnung](09-abschluss.md) | Wann Agent, wann Code? Risiken, nächste Schritte |
 
 !!! tip "Was man nicht auslassen sollte"
@@ -57,13 +58,13 @@ weiter, wo wir beim letzten Mal aufgehört haben.
 flowchart LR
     U([Auftrag im Chat]) --> H[Harness<br/>Claude Code oder pi]
     H <--> M[(Modell<br/>Claude · DeepSeek · Ollama)]
-    H <-->|MCP| S[MCP-Server<br/>get_weather<br/>get_date_info<br/>render_weather_screen]
-    S --> W[Open-Meteo<br/>Wetter-API]
+    H <-->|MCP| S[MCP-Server<br/>get_joke<br/>get_date_info<br/>render_joke_screen]
+    S --> W[JokeAPI<br/>Witze]
     S -->|Webhook| B[LaraPaper<br/>BYOS-Server<br/>Plugin + Playlist]
     B -->|Gerät fragt nach| D[Seeed TRMNL 7,5″<br/>E-Ink-Display]
 ```
 
-Der Auftrag lautet sinngemäß *„Mach mir den Screen für heute.“* **Das Modell
+Der Auftrag lautet sinngemäß *„Mach mir den Witz des Tages, gern was mit Kaffee.“* **Das Modell
 entscheidet selbst**, welche Tools es in welcher Reihenfolge aufruft. Der Harness
 führt die Aufrufe aus, und der MCP-Server erledigt die eigentliche Arbeit.
 

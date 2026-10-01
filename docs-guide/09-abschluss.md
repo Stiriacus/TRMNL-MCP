@@ -13,10 +13,10 @@ verbindet beide Welten**.
 | Mehrere Systeme situationsabhängig kombinieren | Harte Anforderungen an Korrektheit und Reproduzierbarkeit |
 | Ein Mensch prüft das Ergebnis | Läuft unbeaufsichtigt und muss immer funktionieren |
 
-Im Projekt sind Datum, Wetter und Rendering **Code**. Die Tagesmessage und die
-Steuerung übernimmt das **Modell**. Wer den Screen regelmäßig automatisch aktualisieren
+Im Projekt sind Datum, Witzabruf und Rendering **Code**. Auswahl, Übersetzung und
+Steuerung übernimmt das **Modell**. Wer jeden Morgen automatisch einen neuen Witz
 wollte, bräuchte dafür keinen Agenten, sondern ein Skript mit einem einzelnen
-LLM-Aufruf für die Message.
+LLM-Aufruf für die Übersetzung.
 
 ## Was man aus dem Projekt mitnehmen kann
 
