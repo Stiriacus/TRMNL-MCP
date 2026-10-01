@@ -67,7 +67,7 @@ Anbieter.
 | Tool gehört zur Anwendung | Tool ist ein **eigener Prozess**, der Server. Wer das System kennt, baut ihn. | `trmnl-display` läuft in Claude Code und pi, ohne Änderung |
 | Jede Anwendung hat ein eigenes Format | **Ein Protokoll** mit `tools/list` (das Handbuch) und `tools/call` (der Anschluss) | derselbe Server für beide Harnesses |
 | Tools beim Bau festgelegt | Der Harness **fragt zur Laufzeit**, was der Server kann | neues Tool im Server, der Harness kennt es ohne eigenes Update |
-| Zugangsdaten in der Anwendung | Zugangsdaten **bleiben im Server**. Das Modell sieht nur Name, Beschreibung und Schema. | Die LaraPaper-Plugin-IDs sieht das Modell nie |
+| Zugangsdaten in der Anwendung | Zugangsdaten **bleiben im Server**. Das Modell sieht nur Name, Beschreibung und Schema. | LaraPaper-Token und Seiten-IDs sieht das Modell nie |
 | Modellwechsel heißt Integrationen neu bauen | Der Harness übersetzt MCP ins Format des Modells | DeepSeek und Claude mit denselben Tools |
 
 !!! warning "Was MCP **nicht** löst"

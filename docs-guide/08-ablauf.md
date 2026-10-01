@@ -9,10 +9,11 @@ hängt davon ab, wie weit Seite 7 gekommen ist.
 
 | Akt | Braucht |
 |---|---|
-| 1. Der Witz des Tages | `trmnl-display` mit drei Tools |
+| 1. Der Witz des Tages | `trmnl-display` mit drei Tools, LaraPaper mit der Seite „Witz des Tages“ |
 | 2. Anderer Harness, anderes Modell | Akt 1 und pi |
-| 3. Die Tagesplaylist | zusätzlich `tagesinhalte`, fürs Display LaraPaper |
-| 4. Bewusst kaputt machen | Akt 1 |
+| 3. Die Tagesplaylist | zusätzlich `tagesinhalte`, `update_plugin` und die übrigen Seiten |
+| 4. Einen Fehler gezielt korrigieren | Akt 3 und `list_plugins`, `get_plugin` |
+| 5. Bewusst kaputt machen | Akt 1 |
 
 ## Was aus Seite 7 da sein muss
 
@@ -21,17 +22,21 @@ hängt davon ab, wie weit Seite 7 gekommen ist.
 - [ ] in Claude Code angebunden, sodass `claude mcp list` den Server zeigt
 - [ ] für Akt 2 pi mit DeepSeek-Key, ein vorher heruntergeladenes Ollama-Modell
       (`ollama pull …` dauert sonst Minuten) und eine vorhandene `.pi/mcp.json`
-- [ ] für Akt 3 der Server `tagesinhalte`, gebaut und angebunden
+- [ ] für Akt 3 der Server `tagesinhalte`, gebaut und angebunden, dazu `update_plugin`
+- [ ] für Akt 4 `list_plugins` und `get_plugin`
+- [ ] LaraPaper erreichbar, Token und Seiten-IDs in `server/.env`, die Seiten `witz`,
+      `zitat`, `geschichte`, `http` und `nachricht` angelegt
+      (→ [Bauanleitung](../docs-dev/anleitung.md), Phase 3 Teil B)
 
 Nur fürs echte Display braucht es zusätzlich Folgendes.
 
-- [ ] LaraPaper läuft, das Gerät ist verbunden (→ [docs-dev/06](../docs-dev/06-recherche-trmnl.md))
-- [ ] Plugins `witz`, `zitat`, `geschichte` und `http` sind angelegt und in der
-      Playlist, `update_plugin` ist gebaut
-- [ ] `refresh_rate` am Gerät steht für die Demo auf ca. 60 s
+- [ ] das Gerät ist mit LaraPaper verbunden (→ [docs-dev/06](../docs-dev/06-recherche-trmnl.md))
+- [ ] die Seiten stehen in der Playlist des Geräts. Für Akt 1 am besten eine Playlist
+      mit **nur** der Witz-Seite, sonst wartet man, bis sie in der Rotation dran ist
+- [ ] das Refresh-Intervall steht für die Demo auf ca. 60 s
 
-Ohne Display ist das Ergebnis das **PNG** unter `server/public/images/`. Für alles,
-was hier gezeigt wird, reicht das.
+Ohne Gerät reicht die **Vorschau** der Seite in LaraPaper. Sie zeigt dasselbe Markup,
+aus dem LaraPaper das Bild fürs Gerät erzeugt.
 
 ## Akt 1 · Der Witz des Tages (Claude Code)
 
@@ -51,8 +56,10 @@ Auf vier Dinge achten wir.
    Beschreibung empfiehlt, oder probiert es erst Deutsch und reagiert dann auf den
    Fehlertext? Danach **übersetzt es selbst.**
 3. **Die Tool-Ergebnisse** im Verlauf aufklappen. Das ist das JSON aus unserem Server.
-4. **Das Ergebnis.** Das PNG öffnen oder mit LaraPaper nach dem nächsten Refresh aufs
-   Display schauen.
+4. **Das Ergebnis.** Die Vorschau der Seite in LaraPaper öffnen oder warten, bis die
+   Seite in der Playlist dran ist. Dabei auf die Antwort des Modells achten: Behauptet
+   es „ist jetzt auf dem Display“? Das Tool sagt im `hint` ausdrücklich, dass die
+   Seite erst später erscheint.
 
 ## Akt 2 · Anderer Harness, anderes Modell (pi)
 
@@ -85,11 +92,32 @@ Hier lohnt der Blick auf vier Punkte.
   schreiben.
 - **Welches Geschichtsereignis** wählt er, und warum? Die Tool-Beschreibung bittet um
   „nicht belastend“.
-- **Ohne Display** zeigt der Agent die Inhalte im Chat. Mit LaraPaper befüllt er per
-  `update_plugin` die Plugins, und die Playlist rotiert bei jedem Refresh zum nächsten
-  Screen.
+- Per `update_plugin` überschreibt er die Seiten in LaraPaper. Die Playlist rotiert
+  bei jedem Refresh zur nächsten Seite, und jede erscheint mit dem neuen Inhalt, sobald
+  sie dran ist. **Ohne LaraPaper** lässt man die Display-Tools weg, dann zeigt der
+  Agent die Inhalte im Chat.
 
-## Akt 4 · Bewusst kaputt machen
+## Akt 4 · Einen Fehler gezielt korrigieren
+
+```text
+Beim Zitat auf dem Display steht "Unbekannt" als Autor. Prüf das und korrigier es,
+ohne den Rest der Seite zu ändern.
+```
+
+Das ist der Fall aus dem Alltag: Etwas auf dem Display ist falsch, und der Agent soll
+es finden und beheben, ohne alles neu zu machen.
+
+- Findet er die Seite über `list_plugins`, oder rät er?
+- **Liest er zuerst** mit `get_plugin`, bevor er schreibt? Ein Agent, der blind neu
+  schreibt, ersetzt womöglich auch das Zitat.
+- Holt er den richtigen Autor aus `get_quote_of_the_day`, oder **erfindet** er einen?
+- Ruft er `update_plugin` mit dem alten Zitat und dem neuen Autor auf?
+
+Die Grenze zeigt sich auch: Playlists kann der Agent nicht lesen. Welche Seite in
+welcher Playlist steckt, ist in LaraPaper festgelegt. Er findet sich nur über die
+Namen der Seiten zurecht.
+
+## Akt 5 · Bewusst kaputt machen
 
 Hier sieht man am deutlichsten, **wie ein Agent „denkt“.** Nach jedem Versuch die
 Änderung zurücknehmen.
@@ -102,6 +130,8 @@ Hier sieht man am deutlichsten, **wie ein Agent „denkt“.** Nach jedem Versuc
 | 4 | Den Auftrag unklar formulieren, etwa *„Mach was Schönes aufs Display.“* | Was macht das Modell ohne klare Vorgaben? | Zeigt, wie viel an Auftrag und `AGENTS.md` hängt |
 | 5 | Tool zurück auf `render_screen` umbenennen, die Grenze aus der Beschreibung streichen und dann *„Zeig nach dem Witz noch das Zitat des Tages.“* | Sucht das Modell ein passendes Tool, oder missbraucht es den Witz-Screen? | Schwache Modelle stecken das Zitat in `setup` und den Autor in `punchline`. Das Schema merkt nichts |
 | 6 | Im Tool `get_on_this_day` die Bereinigung von `U+00AD` entfernen *(nur mit Display)* | Sieht man es auf dem Display? | Unsichtbare Zeichen zeigen, dass Daten aus APIs nie so sauber sind, wie sie aussehen |
+| 7 | In `lib/larapaper.ts` die Revisionsmarke weglassen und zwei Witze nacheinander schicken *(nur mit Display)* | Warum zeigt die Vorschau den neuen Witz, das Display aber den alten? | LaraPaper verwirft das gespeicherte Bild nur, wenn sich das Markup ändert. Ein Detail, das in keiner Doku steht, sondern nur im Quellcode |
+| 8 | `LARAPAPER_TOKEN` in `.env` ungültig machen | Meldet das Modell den Fehler, oder behauptet es „fertig“? | `isError: true` mit „Token ungültig“. Gute Modelle melden es und versuchen es nicht endlos erneut |
 
 !!! warning "Der wichtigste Fall"
     Fall 2 zeigt, wie ein Agent mit fehlenden Daten umgeht. Ein erfundener Witz ist
@@ -113,8 +143,11 @@ Hier sieht man am deutlichsten, **wie ein Agent „denkt“.** Nach jedem Versuc
 
 - **Ein Tool funktioniert nicht.** Die Fehlermeldung zurück an den Agenten geben und
   ihn reparieren lassen. Das ist selbst eine gute Demo.
-- **Das Display reagiert nicht.** Das PNG oder die LaraPaper-Vorschau zeigen, die
+- **Das Display reagiert nicht.** Die Vorschau der Seite in LaraPaper zeigen, die
   Logik ist dieselbe.
+- **LaraPaper ist nicht erreichbar.** Akt 1 ohne `render_joke_screen` zeigen (der
+  Agent präsentiert den Witz im Chat), oder den Ausfall selbst zur Demo machen
+  (Fall 8 oben).
 - **Die Modell-API ist nicht erreichbar.** Auf Ollama (lokal) ausweichen. Das ist
   zugleich ein Argument für lokale Modelle.
 - **Der Server startet nicht im Harness.** Im Inspector zeigen, dass die Tools für

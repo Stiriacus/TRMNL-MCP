@@ -156,9 +156,19 @@ Nach demselben Muster gibt es je einen Auftrag pro Tool.
 | Tool | Spezifikation | Worauf beim Prüfen achten |
 |---|---|---|
 | `get_date_info` | [docs-dev/03](../docs-dev/03-mcp-tool-spezifikation.md) | Kalenderwoche richtig (Donnerstagsregel)? Keine Bibliothek? |
-| `render_joke_screen` | docs-dev/02 und 03 | Layout 800×480, Einzeiler ohne Pointe? Datei unter 90 KB? |
+| `render_joke_screen` | docs-dev/02, 03 und [06](../docs-dev/06-recherche-trmnl.md) (Abschnitt 7.7) | Text vom Modell nur in den Daten, **nie im Markup**? Ausgabe mit `{{ }}`? Revisionsmarke bei jedem Aufruf neu? Einzeiler ohne Pointe? |
 | `get_quote_of_the_day`, `get_on_this_day`, `get_http_status` als **zweiter Server** `tagesinhalte` | [docs-dev/07](../docs-dev/07-weitere-mcp-tools.md) | Rückgabe knapp? Weiche Trennstriche entfernt? |
-| `update_plugin` *(nur mit LaraPaper)* | docs-dev/07 | Plugin-UUIDs nur aus `.env`, nie im Schema? |
+| `update_plugin` | docs-dev/07 | Token und Seiten-IDs nur aus `.env`, nie im Schema? Gleicher Upload-Weg wie `render_joke_screen`? |
+| `list_plugins`, `get_plugin` | docs-dev/07 | Gibt `get_plugin` nur Felder zurück, kein Markup? Bleiben fremde Seiten unangetastet? |
+
+!!! warning "Vorher in LaraPaper: die Seiten anlegen"
+    `render_joke_screen` und `update_plugin` **überschreiben** Seiten, die es schon
+    geben muss. Jede Seite einmal über die API anlegen
+    (`POST /api/plugin_settings`), die ID in `server/.env` eintragen und die Seite
+    einmalig in der LaraPaper-Oberfläche in die Playlist aufnehmen. Eine
+    Playlist-API gibt es nicht. Die Schritte stehen in der
+    [Bauanleitung](../docs-dev/anleitung.md), Phase 3 Teil B. Das Gerät selbst
+    braucht man zum Bauen nicht, die **Vorschau** der Seite in LaraPaper reicht.
 
 Unsere Rolle ist jetzt **Review**. Stimmen Feldnamen und Beschreibung mit der
 Spezifikation überein? Hat der Agent etwas dazuerfunden? Das geht **deutlich
@@ -193,5 +203,8 @@ Danach ist Zeit zum Spielen.
   interessiert, und den Harness in wenigen Minuten ein Tool daraus bauen lassen.
   Vorher gemeinsam entscheiden, *welche* Endpunkte und Felder es braucht (wie auf
   [Seite 2](02-harness.md#zum-anfassen-eine-api-auswahlen-und-beschreiben)).
-- **Aufs Display bringen** *(optional, wenn LaraPaper läuft)* und die Tagesplaylist
+- **Einen Fehler korrigieren lassen** mit *„Beim Zitat steht der falsche Autor.
+  Korrigier das, ohne den Rest zu ändern.“* Liest das Modell die Seite erst mit
+  `get_plugin`, bevor es schreibt?
+- **Aufs Display bringen** *(wenn das Gerät verbunden ist)* und die Tagesplaylist
   aus [Seite 8](08-ablauf.md) live befüllen.

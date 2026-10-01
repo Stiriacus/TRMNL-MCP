@@ -41,9 +41,9 @@ sequenceDiagram
     H->>M: Ergebnis
     M-->>H: tool_use: render_joke_screen(joke: {…}, date: {…})
     H->>T: ausführen
-    T-->>H: {"filename": "screen-….png"}
+    T-->>H: {"plugin": "witz", "status": "updated"}
     H->>M: Ergebnis
-    M-->>H: "Fertig, der Screen ist gerendert."
+    M-->>H: "Fertig. Der Witz erscheint, sobald die Seite dran ist."
     H->>U: Antwort
 ```
 

@@ -13,7 +13,8 @@ verbindet beide Welten**.
 | Mehrere Systeme situationsabhängig kombinieren | Harte Anforderungen an Korrektheit und Reproduzierbarkeit |
 | Ein Mensch prüft das Ergebnis | Läuft unbeaufsichtigt und muss immer funktionieren |
 
-Im Projekt sind Datum, Witzabruf und Rendering **Code**. Auswahl, Übersetzung und
+Im Projekt sind Datum, Witzabruf, Layout und Upload **Code**, das Rendern übernimmt
+LaraPaper. Auswahl, Übersetzung und
 Steuerung übernimmt das **Modell**. Wer jeden Morgen automatisch einen neuen Witz
 wollte, bräuchte dafür keinen Agenten, sondern ein Skript mit einem einzelnen
 LLM-Aufruf für die Übersetzung.
@@ -34,7 +35,7 @@ LLM-Aufruf für die Übersetzung.
 | Thema | Frage |
 |---|---|
 | **Halluzination** | Was passiert, wenn das Modell Daten erfindet? Dagegen helfen klare Fehler, Validierung und ein Mensch im Loop |
-| **Sicherheit** | Wer darf welche Tools nutzen? Wie gehen wir mit Prompt Injection über Tool-Ergebnisse um? |
+| **Sicherheit** | Wer darf welche Tools nutzen? Wie gehen wir mit Prompt Injection über Tool-Ergebnisse um? Wo verläuft die Grenze zwischen Daten und Code (Blade kann PHP ausführen)? |
 | **Datenschutz** | Welche Daten gehen an welchen Anbieter? Lokale Modelle sind eine Option |
 | **Kosten** | Pro Auftrag Cent-Beträge (DeepSeek) bis nichts (lokal). Bei großen Modellen und vielen Aufrufen summiert es sich |
 | **Betrieb** | stdio reicht lokal. Für ein Team braucht man HTTP-Server mit Authentifizierung |
@@ -56,5 +57,7 @@ Nachlesen lassen sie sich in [`docs-dev`](../docs-dev/01-projektuebersicht.md).
 - **Fehler- und Fallback-Verhalten** für jeden Ausfall durchdacht
   (`05-fehler-und-fallbacks.md`)
 - **Prompt-Regeln explizit und prüfbar** formuliert (`04-prompt-design.md`)
-- Bestehende **Infrastruktur** (LaraPaper) statt **Eigenbau** genutzt, nachdem die API
-  recherchiert war (`06-recherche-trmnl.md`)
+- Bestehende **Infrastruktur** (LaraPaper) statt **Eigenbau** genutzt, und zwar über
+  deren vorhandene Archiv-Schnittstelle, **ohne LaraPaper selbst zu ändern**. Gefunden
+  wurde sie erst im Quellcode, nicht in der Doku (`06-recherche-trmnl.md`)
+- Das Modell liefert **nur Text, nie Markup**. Vorlagen liegen fest im MCP-Server

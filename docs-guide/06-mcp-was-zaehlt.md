@@ -32,9 +32,9 @@ Varianten für dasselbe Tool.
 === "Gut (unser render_joke_screen)"
     ```ts
     description:
-      'Erzeugt den Witz-des-Tages-Screen für das E-Ink-Display (800×480 Pixel, ' +
-      'Graustufen): übergibt die Daten an das Witz-Plugin in LaraPaper, das den ' +
-      'Screen rendert. Das Gerät zeigt ihn beim nächsten Refresh. ' +
+      'Bringt den Witz des Tages auf das E-Ink-Display: überschreibt die Seite ' +
+      '"Witz des Tages" in LaraPaper mit neuem Inhalt. Sie erscheint, sobald sie ' +
+      'in der Playlist des Geräts wieder an der Reihe ist. ' +
       'Eingaben: joke = ein Witz aus get_joke, bei Bedarf von dir übersetzt und ' +
       'gekürzt (setup max. 140, punchline max. 100 Zeichen, keine Emojis, Pointe ' +
       'nicht verändern); date = Ergebnis von get_date_info, unverändert übernehmen. ' +
@@ -42,8 +42,8 @@ Varianten für dasselbe Tool.
       'andere Inhalte (Zitat, Geschichte, HTTP-Status) über update_plugin, ' +
       'reinen Text über show_message.'
     ```
-    Jede Frage ist **beantwortet**. Die Beschreibung sagt, **was** entsteht
-    (Witz-Screen, Größe, Ziel), **woher** jede Eingabe kommt (zwei Tools, beim Witz
+    Jede Frage ist **beantwortet**. Die Beschreibung sagt, **was** passiert und
+    **wann** man es sieht (Seite wird ersetzt, erscheint mit der Playlist), **woher** jede Eingabe kommt (zwei Tools, beim Witz
     zusätzlich das Modell selbst), **wann** es drankommt und **wann nicht**, samt
     Verweis auf das richtige Tool.
 
@@ -108,7 +108,7 @@ tun kann. Findet die API zum Stichwort keinen Witz, lautet unser Text deshalb
 |---|---|---|
 | Datum, Kalenderwoche | Tool `get_date_info` (reiner Code) | Modelle kennen das heutige Datum nicht zuverlässig und verrechnen sich bei Kalenderwochen |
 | Witz abrufen, jugendfrei filtern | Tool `get_joke` (API-Aufruf, `safe-mode` fest im Code) | Inhalt kommt aus einer geprüften Quelle, der Filter hängt nicht am Modell |
-| Rendering, Pixelmaße | Tool `render_joke_screen` (Code) | muss exakt und reproduzierbar sein |
+| Layout, Rendering | feste Vorlage im MCP-Server, gerendert von LaraPaper | muss exakt und reproduzierbar sein |
 | Witz auswählen, übersetzen, kürzen | **Modell** | Hier ist Sprachgefühl gefragt |
 | Reihenfolge der Schritte | **Modell** | flexibel auf den Auftrag reagieren |
 
@@ -119,16 +119,18 @@ der **Code rechnet**.
 
 ```
 server/src/
-├── lib/        ← die eigentliche Logik (jokes.ts, dateInfo.ts, render.ts)
+├── lib/        ← die eigentliche Logik (jokes.ts, dateInfo.ts, larapaper.ts)
 │                  testbar ohne KI, wiederverwendbar
 └── tools/      ← dünne MCP-Hüllen mit Beschreibung, Schema und Fehlerbehandlung
 ```
 
 Dieselbe `lib/`-Funktion lässt sich aus einem MCP-Tool, einem normalen Skript oder
-einem Unit-Test aufrufen. Das zahlt sich direkt aus, denn unser BYOS-Server
-LaraPaper kann das Rendering komplett selbst übernehmen. Das Modell schickt dann nur
-noch Daten an ein Webhook-Plugin. Dafür ändert sich nur `lib/render.ts`, und der
-**Vertrag zum Modell** bleibt identisch.
+einem Unit-Test aufrufen. Im Projekt hat sich das schon ausgezahlt. Geplant war
+zuerst, das Bild selbst zu rendern (Headless-Browser, PNG). Dann zeigte sich, dass
+LaraPaper fertige Seiten annimmt und selbst rendert. Getauscht wurde nur `lib/`
+(`render.ts` → `larapaper.ts`). Name und Schema von `render_joke_screen`, also der
+**Vertrag zum Modell**, sind gleich geblieben. In der Beschreibung hat sich nur ein
+Satz geändert: wann das Ergebnis auf dem Display zu sehen ist.
 
 ## 6. Wenige, klar geschnittene Tools
 
@@ -140,10 +142,14 @@ noch Daten an ein Webhook-Plugin. Dafür ändert sich nur `lib/render.ts`, und d
   nächsten Schritt braucht.
 - **Der Name muss halten, was das Tool kann.** Aus `render_screen` wurde
   `render_joke_screen`, als klar war, dass es nur *einen* Screen kann (siehe
-  Regel 2). Für alles andere gibt es `update_plugin`, bei dem jedes Plugin ein festes
-  Layout und ein eigenes Schema hat. Neuer Inhalt heißt dann **neues Plugin**, nicht
-  neues Tool und schon gar nicht ein Universal-Tool, in das das Modell freies Layout
-  kippt.
+  Regel 2). Für alles andere gibt es `update_plugin`, bei dem jedes Plugin (jede
+  Seite in LaraPaper) ein festes Layout und ein eigenes Schema hat. Neuer Inhalt heißt
+  dann **neue Seite**, nicht neues Tool und schon gar nicht ein Universal-Tool, in das
+  das Modell freies Layout kippt.
+- **Lesen gehört genauso zugeschnitten wie Schreiben.** Damit der Agent einen Fehler
+  auf dem Display gezielt korrigieren kann, gibt es `list_plugins` und `get_plugin`.
+  `get_plugin` liefert nur die Felder, **nicht das Markup**. Das Modell soll Inhalte
+  korrigieren, nicht das Layout.
 
 ## Bonus zur Sicherheit
 
@@ -154,12 +160,16 @@ noch Daten an ein Webhook-Plugin. Dafür ändert sich nur `lib/render.ts`, und d
   zum Beispiel über Berechtigungen und Rückfragen bei kritischen Aktionen.
 - HTTP-Server brauchen **Authentifizierung**, Origin-Prüfung und nur die nötigen
   Rechte.
-- Ein konkretes Beispiel aus dem Projekt ist **Blade**. LaraPaper rendert Markup als
-  *Blade*, und Blade kann PHP ausführen. Würde `show_message` rohes HTML vom Modell
-  durchreichen, könnte ein manipuliertes Modell Code auf dem Server ausführen.
-  Deshalb nimmt das Tool nur **Text** entgegen und setzt ihn in eine feste Vorlage.
-- Zugangsdaten kommen **nie ins Modell**. Plugin-UUIDs und Tokens bleiben in `.env`.
-  Das Modell wählt nur `plugin: "zitat"`, und der Server übersetzt das in die UUID.
+- Ein konkretes Beispiel aus dem Projekt ist **Blade**. LaraPaper rendert Seiten als
+  *Blade*, und Blade kann PHP ausführen. Würde ein Display-Tool Markup vom Modell
+  durchreichen, könnte ein manipuliertes Modell Code auf dem Server ausführen. Deshalb
+  nehmen alle Display-Tools nur **Text** entgegen. Der landet als Daten in der Seite,
+  und die feste Vorlage im Server gibt ihn mit `{{ }}` escapt aus. Die Grenze zwischen
+  Daten und Code zieht der **MCP-Server**, nicht das Modell.
+- Zugangsdaten kommen **nie ins Modell**. Der LaraPaper-Token und die Seiten-IDs
+  bleiben in `.env`. Das Modell wählt nur `plugin: "zitat"`, und der Server übersetzt
+  das in die ID. Der Token kann Seiten überschreiben und gehört deshalb behandelt wie
+  ein Passwort.
 - Verbindungen und Tools **regelmäßig durchsehen**. Jeder Harness zeigt, welche
   MCP-Server verbunden sind und welche Tools sie anbieten (in Claude Code per `/mcp`
   oder `claude mcp list`, für jeden Server per MCP Inspector). Dabei lohnt sich

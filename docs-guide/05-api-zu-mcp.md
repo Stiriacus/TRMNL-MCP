@@ -131,19 +131,29 @@ flowchart LR
         J[get_joke]
         R[render_joke_screen]
         U[update_plugin]
+        L[list_plugins · get_plugin]
     end
     AG[Agent] --> S1
     AG --> S2
-    S2 -->|Webhook| LP[LaraPaper-Playlist<br/>Witz · Zitat · Geschichte · HTTP-Status]
+    S2 -->|Seiten hochladen| LP[LaraPaper-Playlist<br/>Witz · Zitat · Geschichte · HTTP-Status]
 ```
 
 Der Auftrag lautet *„Stell die Playlist für heute zusammen mit einem Kaffeewitz,
 einem Zitat, einem Ereignis von heute aus der Geschichte und zum Abschluss einem
 HTTP-Status mit einem Spruch dazu.“*
 
-Der Agent sammelt, **wählt aus, übersetzt, kürzt** auf Display-Länge und befüllt die
-Plugins. Das sind genau die Aufgaben, bei denen ein **Sprachmodell stark** ist. Das
+Der Agent sammelt, **wählt aus, übersetzt, kürzt** auf Display-Länge und überschreibt
+die Seiten in LaraPaper. Das sind genau die Aufgaben, bei denen ein **Sprachmodell stark** ist. Das
 Abrufen, Bereinigen und Anzeigen bleibt Code.
+
+!!! info "Auch LaraPaper ist nur eine API"
+    Die Display-Tools zeigen die These von oben noch einmal von der anderen Seite.
+    LaraPaper will für eine Seite ein **ZIP** mit einer YAML-Datei und einem
+    Blade-Template, hochgeladen als Multipart-Formular. Das Modell sieht davon nichts.
+    Es ruft nur `update_plugin({ plugin: "zitat", fields: { quote, author } })` auf.
+    Vorlage, Revisionsmarke, ZIP und Token ergänzt der Server. Die Schnittstelle ist
+    ursprünglich für die TRMNL-Kommandozeile gedacht. Ohne MCP-Adapter könnte ein Agent
+    sie kaum zuverlässig bedienen.
 
 **Zwei Server statt einem** sind Absicht, denn Datenquellen und Display sind getrennt.
 Den Server `tagesinhalte` könnte man genauso an einen Chat-Bot oder einen Newsletter

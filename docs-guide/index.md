@@ -43,7 +43,7 @@ weiter, wo wir beim letzten Mal aufgehört haben.
 | # | Seite | Inhalt |
 |---|---|---|
 | 7 | [Selbst bauen](07-selbst-bauen.md) | Server aufsetzen, `get_joke` von Hand, den Rest baut der Harness, testen und spielen |
-| 8 | [Der Ablauf vom Auftrag zum Display](08-ablauf.md) | Witz des Tages und Tagesplaylist, Harness und Modell im Vergleich, bewusst kaputt machen |
+| 8 | [Der Ablauf vom Auftrag zum Display](08-ablauf.md) | Witz des Tages und Tagesplaylist, Harness und Modell im Vergleich, einen Fehler gezielt korrigieren, bewusst kaputt machen |
 | 9 | [Abschluss und Einordnung](09-abschluss.md) | Wann Agent, wann Code? Risiken, nächste Schritte |
 
 !!! tip "Was man nicht auslassen sollte"
@@ -60,13 +60,17 @@ flowchart LR
     H <--> M[(Modell<br/>Claude · DeepSeek · Ollama)]
     H <-->|MCP| S[MCP-Server<br/>get_joke<br/>get_date_info<br/>render_joke_screen]
     S --> W[JokeAPI<br/>Witze]
-    S -->|Webhook| B[LaraPaper<br/>BYOS-Server<br/>Plugin + Playlist]
+    S -->|Seite hochladen| B[LaraPaper<br/>BYOS-Server<br/>Seiten + Playlist]
     B -->|Gerät fragt nach| D[Seeed TRMNL 7,5″<br/>E-Ink-Display]
 ```
 
 Der Auftrag lautet sinngemäß *„Mach mir den Witz des Tages, gern was mit Kaffee.“* **Das Modell
 entscheidet selbst**, welche Tools es in welcher Reihenfolge aufruft. Der Harness
 führt die Aufrufe aus, und der MCP-Server erledigt die eigentliche Arbeit.
+
+Ein Bild rendert dabei niemand von uns. Der MCP-Server überschreibt eine fertige
+**Seite** in LaraPaper mit dem neuen Witz. LaraPaper rendert sie und zeigt sie an,
+sobald sie in der Playlist des Geräts an der Reihe ist.
 
 ## Aufbau jeder Seite
 
