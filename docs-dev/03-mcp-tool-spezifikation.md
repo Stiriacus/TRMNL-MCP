@@ -12,7 +12,7 @@ Alle Tools nutzen [Zod](https://zod.dev/) für das Eingabeschema, wie es die akt
 
 ## `get_joke`
 
-**API:** [JokeAPI](https://v2.jokeapi.dev): `https://v2.jokeapi.dev/joke/{Kategorie}?lang={de|en}&safe-mode[&contains=…]`
+**API:** [JokeAPI](https://v2.jokeapi.dev): `https://v2.jokeapi.dev/joke/{Kategorie}?lang={de|en}&safe-mode=true[&contains=…]`
 
 Welche der 10 Endpunkte wir brauchen und welche Felder übrig bleiben, ist auf
 Seite 2 des Guides hergeleitet (`docs-guide/02-harness.md`, „Zum Anfassen“).
@@ -103,9 +103,9 @@ verwenden – das ist die zentrale Lernbotschaft dieses Tools.
 ## `render_joke_screen`
 
 **Beschreibung (für den Agenten):**
-> "Erzeugt den Witz-des-Tages-Screen für das E-Ink-Display (800×480 Pixel,
-> Graustufen) und übergibt die Daten an das Witz-Plugin in LaraPaper, das den Screen
-> rendert. Das Gerät zeigt ihn beim nächsten Refresh. Eingaben: joke = ein Witz aus
+> "Bringt den Witz des Tages auf das E-Ink-Display: überschreibt die Seite
+> 'Witz des Tages' in LaraPaper mit neuem Inhalt. Sie erscheint, sobald sie in der
+> Playlist des Geräts wieder an der Reihe ist. Eingaben: joke = ein Witz aus
 > get_joke, bei Bedarf von dir ins Deutsche übersetzt und gekürzt (setup max. 140,
 > punchline max. 100 Zeichen, keine Emojis, Pointe nicht verändern); date = Ergebnis
 > von get_date_info, unverändert übernehmen. Rufe es als letzten Schritt auf. Nur für
@@ -114,7 +114,8 @@ verwenden – das ist die zentrale Lernbotschaft dieses Tools.
 
 > Hinweis: Hieß ursprünglich `render_screen`. Umbenannt, weil der Name ein
 > allgemeines Rendering versprach, das Schema aber fest einen Witz und ein Datum
-> verlangt.
+> verlangt. Der Name bleibt, obwohl inzwischen LaraPaper das Bild rendert: Für das
+> Modell zählt, *was* das Tool bewirkt (Screen aktualisieren), nicht *wie*.
 
 **Eingabeschema:**
 
@@ -142,30 +143,67 @@ Fehlerfälle). So bricht der Lauf nicht an ein paar Zeichen zu viel ab.
 
 ```json
 {
-  "filename": "screen-20260930-0900.png",
-  "imageUrl": "http://localhost:3000/images/screen-20260930-0900.png",
-  "width": 800,
-  "height": 480,
-  "sizeBytes": 38410
+  "plugin": "witz",
+  "status": "updated",
+  "rev": "2026-10-01T09:00:12Z",
+  "hint": "Erscheint, sobald die Seite in der Playlist an der Reihe ist."
 }
 ```
 
-Mit LaraPaper (Webhook-Plugin, siehe `06-recherche-trmnl.md`) entfallen Datei und
-URL. Dann kommt `{ "plugin": "witz", "status": "updated" }` zurück.
+Kein Bild, keine URL: Das Rendern übernimmt LaraPaper. Der `hint` verhindert, dass
+das Modell dem Nutzer „ist jetzt auf dem Display“ verspricht.
+
+**Implementierung (LaraPaper-Archiv-Schnittstelle, siehe `06-recherche-trmnl.md`,
+Abschnitt 7.7):**
+
+Die Seite ist ein **static-Recipe** in LaraPaper. Sie wird einmalig angelegt und in
+die Playlist aufgenommen (siehe `anleitung.md`, Phase 3 Teil B). Danach überschreibt
+das Tool sie bei jedem Aufruf komplett:
+
+1. Texte kürzen (siehe Fehlerfälle) und `static_data` bauen:
+   `{ setup, punchline, weekday, date, isoWeek }`.
+2. Feste Vorlage `server/templates/witz.blade.php` laden (Layout nach
+   `02-layout-spezifikation.md`, Ausgabe nur über `{{ $data['setup'] }}` usw.).
+   Davor eine **Revisionsmarke** setzen: `{{-- rev: 2026-10-01T09:00:12Z --}}`.
+3. `settings.yml` erzeugen:
+
+   ```yaml
+   name: Witz des Tages
+   strategy: static
+   refresh_interval: 60
+   static_data: "{\"setup\":\"Was macht ein Informatiker …\",\"punchline\":\"…\"}"
+   ```
+
+   `static_data` ist ein JSON-**String**. Im Code: `JSON.stringify(JSON.stringify(data))`.
+   Das ergibt einen gültigen YAML-String in doppelten Anführungszeichen.
+4. Beides als ZIP packen (`settings.yml`, `full.blade.php`, z. B. mit `fflate`).
+5. `POST {LARAPAPER_URL}/api/plugin_settings/{LARAPAPER_PAGE_WITZ}/archive`,
+   Multipart-Feld `file` (Dateiname `witz.zip`), Header
+   `Authorization: Bearer {LARAPAPER_TOKEN}` und `Accept: application/json`.
+
+Warum diese Details zählen:
+
+| Detail | Grund |
+|---|---|
+| Vorlage liegt im MCP-Server, Modell liefert nur Text | LaraPaper rendert Blade, und Blade kann PHP ausführen. Text vom Modell darf nie Teil des Markups werden. |
+| Ausgabe mit `{{ }}`, nie `{!! !!}` | `{{ }}` escapt HTML. So bleibt auch Witz 14 mit `&szlig;` korrekt: Er erscheint als Text `&szlig;`, wie gewollt. |
+| Revisionsmarke | LaraPaper verwirft das gespeicherte Bild nur, wenn sich das **Markup** ändert. Ohne Marke würde nur `static_data` geändert, und der alte Witz bliebe bis zu `refresh_interval` Minuten stehen. |
+| Immer die komplette Seite schicken | Ein Upload ersetzt Name, Layouts und Daten. Was fehlt, ist danach leer. |
+| `trmnlp_id` und Token aus `.env` | Konfiguration, kein Modell-Wissen. Das Modell sieht beides nie. |
+| `Accept: application/json` | Ohne den Header antwortet Laravel bei Validierungsfehlern mit einer Weiterleitung statt mit einer lesbaren Fehlermeldung. |
 
 **Fehlerfälle:**
 
 | Fall | Verhalten |
 |---|---|
-| `setup` oder `punchline` länger als die Zielwerte | Wird vor dem Rendern an einer Wortgrenze gekürzt (mit "…"), zusätzlich Warnung im Rückgabetext, damit der Agent nachbessern kann |
-| Rendering schlägt fehl (Headless-Browser-Fehler, Timeout) | `isError: true`; das zuletzt erfolgreich gerenderte Bild bleibt unverändert aktiv |
-| Ergebnis-PNG über dem Größenlimit (siehe unten) | Automatische Nachbearbeitung (Graustufen-Palette, Kompression); wenn danach immer noch zu groß: `isError: true` mit Hinweis auf zu komplexes Layout |
+| `setup` oder `punchline` länger als die Zielwerte | Wird vor dem Upload an einer Wortgrenze gekürzt (mit "…"), zusätzlich Warnung im Rückgabetext, damit der Agent nachbessern kann |
+| LaraPaper nicht erreichbar (Timeout/Netzwerk) | `isError: true`. Die Seite in LaraPaper bleibt unverändert, das Display zeigt weiter den letzten Witz |
+| HTTP 401 | `isError: true`, *„LaraPaper-Token ungültig oder abgelaufen“*. Das Modell kann das nicht beheben, also nicht erneut versuchen |
+| HTTP 404 beim Export, HTTP 422 oder 500 beim Upload | `isError: true` mit Status und Meldung von LaraPaper (z. B. *„Invalid ZIP structure“*). Ein Fehler im Server-Code, kein Fall für das Modell |
+| `LARAPAPER_PAGE_WITZ` fehlt in `.env` | Startfehler des Servers, nicht erst beim Tool-Aufruf |
 
-**Größenlimit:** TRMNL-Displays erwarten PNG-Dateien **unter ca. 90 KB** bei
-800×480 px und wenigen Graustufen (siehe Briefing, Abschnitt 3 – vor dem
-Produktivbetrieb gegen die aktuelle TRMNL/Terminus-Doku prüfen, da sich Werte
-ändern können). `render_joke_screen` prüft die Dateigröße nach dem Rendern und
-reduziert bei Bedarf automatisch nach (siehe `server/src/lib/render.ts`).
+Rendering, PNG-Größe, Graustufen und das Ausliefern ans Gerät übernimmt LaraPaper
+mit dem TRMNL-Framework. Diese Fehlerfälle gibt es in unserem Code nicht mehr.
 
 ---
 
@@ -173,19 +211,29 @@ reduziert bei Bedarf automatisch nach (siehe `server/src/lib/render.ts`).
 
 **Beschreibung (für den Agenten):**
 > "Zeigt einen frei wählbaren Text ohne Witz- oder Datumsbezug großflächig auf dem
-> Display an. Nutze dieses Tool nur, wenn explizit eine reine Textnachricht gewünscht
-> ist – für den Witz des Tages ist render_joke_screen zuständig."
+> Display an. Ein leerer Text blendet die Nachricht wieder aus. Nutze dieses Tool nur,
+> wenn explizit eine reine Textnachricht gewünscht ist – für den Witz des Tages ist
+> render_joke_screen zuständig."
 
 **Eingabeschema:**
 
 ```ts
 z.object({
-  text: z.string().max(200)
+  text: z.string().max(200).describe('Leerer Text = Nachricht ausblenden')
 })
 ```
 
-**Rückgabe:** wie `render_joke_screen`, ohne Datumsspalte – der gesamte Screen
-wird für den Text genutzt (Schriftgröße 48 px, zentriert).
+**Rückgabe:** wie `render_joke_screen`, mit `"plugin": "nachricht"`.
+
+**Implementierung:** Gleicher Weg wie `render_joke_screen`, eigene Seite „Nachricht“
+mit Vorlage `server/templates/nachricht.blade.php` (Schriftgröße 48 px, zentriert,
+ganzer Screen). Bei leerem Text schreibt das Tool
+`static_data: {"TRMNL_SKIP_DISPLAY": true}`. LaraPaper überspringt die Seite dann
+in der Playlist, sie kann also dauerhaft in der Playlist bleiben.
+
+> Warum nicht `POST /api/display/update`? Der Push zeigt Markup sofort an, aber bei
+> aktiver Playlist nur bis zum nächsten Geräte-Abruf. Außerdem müsste dafür Markup
+> geschickt werden, das LaraPaper als Blade ausführt (siehe `06`, Abschnitt 7.2 und 7.5).
 
 ---
 
@@ -209,16 +257,23 @@ wird für den Text genutzt (Schriftgröße 48 px, zentriert).
 }
 ```
 
-**Fehlerfälle:** Wenn sich das Gerät seit dem letzten Serverstart noch nie gemeldet
-hat, liefert das Tool `null`-Werte statt eines Fehlers – das ist ein normaler
-Zustand direkt nach dem Einrichten, kein Ausfall.
+**Implementierung:** `GET {LARAPAPER_URL}/api/devices` mit demselben Token. Die
+Feldnamen der LaraPaper-Antwort beim ersten Test abgleichen und auf die Struktur oben
+abbilden.
+
+**Fehlerfälle:** Hat sich das Gerät noch nie gemeldet, liefert das Tool `null`-Werte
+statt eines Fehlers. Das ist direkt nach dem Einrichten ein normaler Zustand, kein
+Ausfall.
 
 ---
 
 ## Konsistenz-Hinweis
 
 Die Feldnamen in diesem Dokument (`joke.punchline`, `date.isoWeek`, …)
-müssen 1:1 mit den Zod-Schemas in `server/src/tools/*.ts` übereinstimmen. Wenn du
+müssen 1:1 mit den Zod-Schemas in `server/src/tools/*.ts` übereinstimmen, und die
+Schlüssel in `static_data` 1:1 mit den `$data['…']`-Zugriffen in `server/templates/*.blade.php`.
+Ein falscher Schlüssel fällt nicht als Fehler auf, sondern als **leere Stelle auf dem
+Display**. Wenn du
 während der Session ein Feld umbenennst, hier und im Code gleichzeitig anpassen –
 sonst bricht `render_joke_screen` mit einem für den Agenten schwer verständlichen
 Validierungsfehler ab (guter Kandidat für den Abschnitt "Bewusst kaputt machen" in
