@@ -10,8 +10,11 @@ Alle APIs wurden am 30.09.2026 live getestet und funktionieren ohne API-Key.
 
 | Server | Tools | Zweck |
 |---|---|---|
-| `trmnl-display` (bestehend) | `get_weather`, `get_date_info`, `render_weather_screen`, **neu:** `update_plugin`, `show_message` | Alles rund ums Display |
-| `tagesinhalte` (neu) | `get_joke`, `get_http_status`, `get_quote_of_the_day`, `get_on_this_day` | Reine Datenquellen, wissen nichts vom Display |
+| `trmnl-display` (bestehend) | `get_joke`, `get_date_info`, `render_joke_screen`, **neu:** `update_plugin`, `show_message` | Witz des Tages und alles rund ums Display |
+| `tagesinhalte` (neu) | `get_http_status`, `get_quote_of_the_day`, `get_on_this_day` | Reine Datenquellen, wissen nichts vom Display |
+
+`get_joke` ist das Haupttool des Projekts und in `03-mcp-tool-spezifikation.md`
+spezifiziert. Es bleibt im Server `trmnl-display`, weil es zum Kern-Ablauf gehört.
 
 Die Trennung ist gewollt. Der Agent kombiniert die Server, und `tagesinhalte` ließe
 sich ohne Änderung auch in anderen Harnesses oder Projekten nutzen.
@@ -21,39 +24,11 @@ server/src/
 ├── mcp-server.ts            ← trmnl-display
 ├── tagesinhalte-server.ts   ← neuer Einstiegspunkt
 ├── lib/
-│   ├── jokes.ts  httpStatus.ts  quotes.ts  onThisDay.ts   ← API-Aufrufe
+│   ├── jokes.ts                                            ← aus 03 (trmnl-display)
+│   ├── httpStatus.ts  quotes.ts  onThisDay.ts              ← API-Aufrufe
 │   └── larapaper.ts                                        ← Webhook / display/update
 └── tools/ …
 ```
-
----
-
-## `get_joke`
-
-**API:** [JokeAPI](https://sv443.net/jokeapi/v2/): `https://v2.jokeapi.dev/joke/{Kategorie}?lang=de&safe-mode[&contains=…]`
-
-**Beschreibung (für den Agenten):**
-> "Liefert einen kurzen, jugendfreien Witz. Kategorien: Programmierung oder
-> gemischt. Mit `topic` kann nach einem Stichwort gefiltert werden (z. B. 'coffee'
-> für Kaffeewitze – Stichwortsuche funktioniert am zuverlässigsten auf Englisch).
-> Nutze es für auflockernde Display-Inhalte."
-
-**Eingabeschema:**
-```ts
-z.object({
-  category: z.enum(['Programming', 'Any']).default('Programming'),
-  lang: z.enum(['de', 'en']).default('de'),
-  topic: z.string().max(30).optional().describe('Stichwort, z. B. "coffee"')
-})
-```
-
-**Rückgabe:** `{ "setup": "…", "punchline": "…", "lang": "de" }`. Einzeilige Witze
-(`type: "single"`) werden auf `setup` abgebildet, `punchline` ist dann leer.
-
-**Fehlerfälle:** Kein Treffer für `topic` → API liefert `"error": true`. Das Tool
-gibt dann `isError: true` mit dem Hinweis *„Kein Witz zu diesem Stichwort, versuche
-es ohne topic oder mit lang=en“* zurück. Der Hinweis ist eine Handlungsempfehlung
-an das Modell.
 
 ---
 
@@ -136,10 +111,10 @@ Katastrophen. Die Auswahl überlassen wir bewusst dem Modell (siehe Beschreibung
 Befüllt ein LaraPaper-Webhook-Plugin (siehe `06-recherche-trmnl.md`, Weg B).
 
 **Beschreibung (für den Agenten):**
-> "Schreibt Inhalte in eines der vorbereiteten Display-Plugins (wetter, zitat,
-> geschichte, witz). Das Layout ist im Plugin festgelegt – übergib nur die Felder,
-> die das jeweilige Plugin erwartet. Texte vorher auf Display-Länge kürzen
-> (max. 160 Zeichen pro Feld), keine Emojis."
+> "Schreibt Inhalte in eines der vorbereiteten Display-Plugins (zitat, geschichte,
+> http). Das Layout ist im Plugin festgelegt – übergib nur die Felder, die das
+> jeweilige Plugin erwartet. Texte vorher auf Display-Länge kürzen (max. 160 Zeichen
+> pro Feld), keine Emojis. Für den Witz des Tages ist render_joke_screen zuständig."
 
 **Eingabeschema:**
 ```ts
@@ -148,10 +123,9 @@ z.discriminatedUnion('plugin', [
              fields: z.object({ quote: z.string().max(160), author: z.string() }) }),
   z.object({ plugin: z.literal('geschichte'),
              fields: z.object({ year: z.number().int(), text: z.string().max(160) }) }),
-  z.object({ plugin: z.literal('witz'),
-             fields: z.object({ setup: z.string().max(160), punchline: z.string().max(160) }) }),
-  z.object({ plugin: z.literal('wetter'),
-             fields: z.object({ /* wie render_weather_screen */ }) })
+  z.object({ plugin: z.literal('http'),
+             fields: z.object({ code: z.number().int(), title: z.string(),
+                                comment: z.string().max(160) }) })
 ])
 ```
 
@@ -180,17 +154,20 @@ kein HTML**, sonst könnte es beliebiges Blade/PHP-Markup einschleusen.
 
 ## Ablauf „Tagesplaylist“
 
-Auftrag: *„Stell die Playlist für heute zusammen: Wetter, ein Zitat, ein Ereignis aus
-der Geschichte und zum Abschluss ein Kaffee-Witz.“*
+Auftrag: *„Stell die Playlist für heute zusammen: ein Kaffee-Witz, ein Zitat, ein
+Ereignis aus der Geschichte und zum Abschluss ein HTTP-Status mit einem Spruch dazu.“*
 
-1. `get_date_info` → Datum für `get_on_this_day`
-2. parallel: `get_weather`, `get_quote_of_the_day`, `get_on_this_day`, `get_joke(topic: "coffee", lang: "en")`
-3. Modell: Ereignis auswählen, Zitat und Witz übersetzen, alles kürzen, Tagesmessage schreiben
-4. 4 × `update_plugin`
+1. `get_date_info` → Datum für `get_on_this_day` und den Witz-Screen
+2. parallel: `get_joke(topic: "coffee", lang: "en")`, `get_quote_of_the_day`, `get_on_this_day`, `get_http_status(418)`
+3. Modell: Ereignis auswählen, Witz und Zitat übersetzen, Spruch zum Statuscode schreiben, alles kürzen
+4. `render_joke_screen` für den Witz, 3 × `update_plugin` für Zitat, Geschichte und HTTP-Status
 5. LaraPaper rotiert bei jedem Geräte-Refresh zum nächsten Plugin der Playlist
 
 ## Offene Punkte
 
-- [ ] Plugins `zitat`, `geschichte`, `witz` in LaraPaper anlegen (Webhook, Liquid-Markup) und in die Playlist aufnehmen
-- [ ] Wie verhält sich JokeAPI mit `contains` + `lang=de`? (Deutscher Bestand ist klein → evtl. immer `en` + Übersetzung)
+- [ ] Plugins `witz`, `zitat`, `geschichte`, `http` in LaraPaper anlegen (Webhook, Liquid-Markup) und in die Playlist aufnehmen
+- [x] Wie verhält sich JokeAPI mit `contains` + `lang=de`? Getestet am 01.10.2026:
+      `contains=kaffee` mit `lang=de` liefert HTTP 400 (`code: 106`, kein Treffer), der
+      deutsche Bestand hat nur 29 jugendfreie Witze. Für Themenwitze also `lang=en`
+      plus Übersetzung durch das Modell (siehe `04-prompt-design.md`).
 - [ ] ZenQuotes-Quellenangabe im Plugin-Layout unterbringen

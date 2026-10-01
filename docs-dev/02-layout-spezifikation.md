@@ -5,11 +5,9 @@
 - Große Schrift, hoher Kontrast (reines Schwarz auf reinem Weiß).
 - Klare, durchgezogene Rahmen statt Schatten oder Verläufen – das Standarddisplay
   hat nur **4 Graustufen**, Verläufe wirken darauf wie Streifen ("Banding").
-- Keine Emojis in der Message – sie rendern auf E-Ink oft als graue Klötze.
+- Keine Emojis im Witz – sie rendern auf E-Ink oft als graue Klötze.
 - Keine dünnen Linien unter 2 px – bei 1-Bit/4-Graustufen-Rendering verschwinden
   sie leicht oder flackern beim Refresh.
-- Ein Icon-Satz mit dicken, einfachen Formen (Liniendicke ≥ 4 px) statt filigraner
-  Icons.
 
 ## Canvas
 
@@ -22,69 +20,76 @@
 ```
 0                                                              800
 ┌──────────────────────────────────────────────────────────────┐ 0
-│  24,24                                          520,24        │
-│  ┌───────────────────────┐              ┌──────────────────┐ │
-│  │                       │              │   Wetterbox      │ │
-│  │                       │              │   520,24         │ │
-│  │   Message des Tages   │              │   256 × 148      │ │
-│  │   32,180              │              └──────────────────┘ │
-│  │   460 × 220           │               Datum   520,188     │
-│  │                       │               KW      520,232     │
-│  └───────────────────────┘                                   │
-│                                                                │
+│  WITZ DES TAGES  24,24                    ┌──────────────────┐ │
+│                                           │  Datumsbox       │ │
+│  ┌──────────────────────────────┐         │  560,24          │ │
+│  │ Setup                        │         │  216 × 148       │ │
+│  │ 24,88 · 496 × 192            │         └──────────────────┘ │
+│  └──────────────────────────────┘                              │
+│  ┌──────────────────────────────┐                              │
+│  │ Pointe (fett)                │                              │
+│  │ 24,296 · 496 × 136           │                              │
+│  └──────────────────────────────┘                              │
+│  Quelle: JokeAPI  24,440                                        │
 └──────────────────────────────────────────────────────────────┘ 480
 ```
 
 ## Elemente im Detail
 
-### 1. Wetterbox (oben rechts)
+### 1. Titelzeile (oben links)
 
 | Eigenschaft | Wert |
 |---|---|
-| Position (x, y) | 520, 24 |
-| Größe (B × H) | 256 × 148 px |
-| Rahmen | 4 px durchgezogen, `#000000`, Eckenradius 12 px |
-| Innenabstand (Padding) | 16 px |
-| Icon | 64 × 64 px, oben links in der Box (536, 40) |
-| Temperatur | rechts neben dem Icon, Schriftgröße 56 px, fett |
-| Zustandstext (z. B. "Sonnig") | unter Icon/Temperatur, Schriftgröße 24 px, normal |
-| Min/Max-Zeile ("H 21 / T 9") | unterste Zeile der Box, Schriftgröße 20 px |
-| Zeilenabstand innerhalb der Box | 8 px |
+| Position (x, y) | 24, 24 |
+| Text | `WITZ DES TAGES` (fest im Template, nicht vom Modell) |
+| Schriftgröße | 24 px, fett, Großbuchstaben, Laufweite +0.1em |
+| Trennlinie | 4 px, `#000000`, 496 px breit, 12 px unter dem Text |
 
-### 2. Datum (unter der Wetterbox)
+### 2. Setup (links, oben)
 
 | Eigenschaft | Wert |
 |---|---|
-| Position (x, y) | 520, 188 |
-| Format | `TT / MM / JJJJ` (z. B. `30 / 09 / 2026`) |
-| Schriftgröße | 28 px, fett |
-| Ausrichtung | linksbündig, beginnt auf gleicher x-Position wie die Wetterbox |
-
-### 3. Kalenderwoche
-
-| Eigenschaft | Wert |
-|---|---|
-| Position (x, y) | 520, 232 |
-| Format | `KW 40` |
-| Schriftgröße | 22 px, normal |
-
-### 4. Message des Tages (links)
-
-| Eigenschaft | Wert |
-|---|---|
-| Position (x, y) | 32, 180 |
-| Größe (B × H) | 460 × 220 px |
-| Schriftgröße | 36 px, Zeilenhöhe 1.3 |
-| Maximale Zeichenzahl | ca. 120 Zeichen (siehe `04-prompt-design.md`) – bei dieser
-  Schriftgröße und Boxbreite passen das etwa 4–5 Zeilen |
-| Ausrichtung | linksbündig, vertikal mittig in der Box |
+| Position (x, y) | 24, 88 |
+| Größe (B × H) | 496 × 192 px |
+| Schriftgröße | 34 px, normal, Zeilenhöhe 1.3 |
+| Maximale Zeichenzahl | ca. 140 Zeichen (siehe `04-prompt-design.md`), das sind etwa 4 Zeilen |
+| Ausrichtung | linksbündig, vertikal unten in der Box (damit Setup und Pointe zusammenrücken) |
 | Umbruch | Wortumbruch, keine Silbentrennung (schlecht lesbar auf E-Ink) |
 
-### 5. Optionaler Fußbereich
+### 3. Pointe (links, unten)
 
-Für spätere Erweiterungen (z. B. Akkustand über `get_device_status`) ist unten ein
-schmaler Streifen reserviert: `y = 440–456`, Schriftgröße 16 px, dezent. Wird in
-Version 1 nicht befüllt.
+| Eigenschaft | Wert |
+|---|---|
+| Position (x, y) | 24, 296 |
+| Größe (B × H) | 496 × 136 px |
+| Schriftgröße | 34 px, **fett**, Zeilenhöhe 1.3 |
+| Maximale Zeichenzahl | ca. 100 Zeichen, das sind etwa 3 Zeilen |
+| Ausrichtung | linksbündig, vertikal oben in der Box |
+| Sonderfall Einzeiler | `punchline` leer: Die Setup-Box wächst auf 24,88 · 496 × 344 px (bis ca. 200 Zeichen), die Pointe-Box entfällt |
+
+### 4. Datumsbox (oben rechts)
+
+| Eigenschaft | Wert |
+|---|---|
+| Position (x, y) | 560, 24 |
+| Größe (B × H) | 216 × 148 px |
+| Rahmen | 4 px durchgezogen, `#000000`, Eckenradius 12 px |
+| Innenabstand (Padding) | 16 px |
+| Zeile 1 | Wochentag (z. B. `Mittwoch`), 24 px, normal |
+| Zeile 2 | Datum `TT / MM / JJJJ` (z. B. `30 / 09 / 2026`), 28 px, fett |
+| Zeile 3 | `KW 40`, 22 px, normal |
+| Zeilenabstand innerhalb der Box | 8 px |
+
+### 5. Fußzeile
+
+| Eigenschaft | Wert |
+|---|---|
+| Position (x, y) | 24, 440 |
+| Text | `Quelle: JokeAPI (v2.jokeapi.dev)`, fest im Template |
+| Schriftgröße | 16 px, normal |
+
+Rechts in der Fußzeile ist Platz für spätere Erweiterungen (z. B. Akkustand über
+`get_device_status`). Wird in Version 1 nicht befüllt.
 
 ## Typografie
 
@@ -100,16 +105,16 @@ Version 1 nicht befüllt.
 Da das Standarddisplay nur 4 Graustufen darstellt, wird im HTML/CSS-Template mit
 genau zwei Werten gearbeitet:
 
-- `#000000` (Text, Rahmen, Icons)
+- `#000000` (Text, Rahmen, Linien)
 - `#FFFFFF` (Hintergrund)
 
-Zwischentöne (z. B. für "leicht bewölkt"-Icons) nur dort einsetzen, wo sie als
-Fläche groß genug sind (≥ 8 × 8 px zusammenhängend), sonst verschwimmen sie beim
+Zwischentöne (z. B. ein grauer Hintergrund hinter der Pointe) nur dort einsetzen, wo
+sie als Fläche groß genug sind (≥ 8 × 8 px zusammenhängend), sonst verschwimmen sie beim
 Rendering auf 4 Graustufen.
 
 ## Bezug zur MCP-Tool-Spezifikation
 
-`render_weather_screen` (siehe `03-mcp-tool-spezifikation.md`) bekommt Wetter, Datum und
-Message als strukturierte Daten übergeben und setzt sie exakt nach diesem Layout
+`render_joke_screen` (siehe `03-mcp-tool-spezifikation.md`) bekommt Witz (Setup und
+Pointe) und Datum als strukturierte Daten übergeben und setzt sie exakt nach diesem Layout
 in eine HTML-Vorlage (`server/src/lib/templates/screen.html`) ein, bevor daraus ein
 PNG gerendert wird.

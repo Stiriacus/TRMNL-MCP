@@ -8,7 +8,7 @@ Playlists schon mitbringt. Die API-Angaben unten stammen direkt aus dem Quellcod
 > **Kurzfassung:** LaraPaper rendert HTML/Blade/Liquid selbst zu Display-Bildern,
 > hat Plugins mit **Webhook-Strategie** und Playlists. Unser MCP-Server muss
 > deshalb **keine Bilder mehr rendern und keinen eigenen BYOS-Server betreiben**.
-> `render_weather_screen` wird zu einem einzigen HTTP-Aufruf an LaraPaper. Das bedeutet
+> `render_joke_screen` wird zu einem einzigen HTTP-Aufruf an LaraPaper. Das bedeutet
 > weniger Code, weniger Fehlerquellen und ein klareres MCP-Beispiel.
 
 ---
@@ -81,16 +81,17 @@ Content-Type: application/json
    <div class="layout layout--row">
      <div class="columns">
        <div class="column">
-         <p class="title">{{ message }}</p>
+         <p class="description">{{ setup }}</p>
+         <p class="title">{{ punchline }}</p>
        </div>
        <div class="column">
-         <span class="value">{{ temperature }}°</span>
-         <span class="label">{{ condition }} · H {{ tempMax }} / T {{ tempMin }}</span>
-         <span class="label">{{ date }} · KW {{ isoWeek }}</span>
+         <span class="label">{{ weekday }}</span>
+         <span class="value">{{ date }}</span>
+         <span class="label">KW {{ isoWeek }}</span>
        </div>
      </div>
    </div>
-   <div class="title_bar"><span class="title">Guten Morgen</span></div>
+   <div class="title_bar"><span class="title">Witz des Tages</span></div>
    ```
 
 2. Der Agent schickt nur noch **Daten**:
@@ -100,9 +101,9 @@ Content-Type: application/json
    Content-Type: application/json
 
    { "merge_variables": {
-       "message": "Klarer Mittwoch mit 18 Grad …",
-       "temperature": 18, "condition": "Klar", "tempMin": 9, "tempMax": 21,
-       "date": "30 / 09 / 2026", "isoWeek": 40 } }
+       "setup": "Was macht ein Informatiker, wenn sein Wagen nicht mehr anspringt?",
+       "punchline": "Aussteigen, einsteigen und nochmal starten.",
+       "weekday": "Mittwoch", "date": "30 / 09 / 2026", "isoWeek": 40 } }
    ```
 
    - Optional `merge_strategy`: `deep_merge` oder `stream` (mit `stream_limit`).
@@ -120,8 +121,8 @@ Zuständigkeiten.
 | Wer | Zuständig für |
 |---|---|
 | LaraPaper-Plugin | **Aussehen**: Layout, E-Ink-Regeln, Rendering |
-| MCP-Server | **Daten**: Wetter, Datum, Weitergabe an LaraPaper |
-| Modell | **Inhalt**: die Tagesmessage und die Reihenfolge der Schritte |
+| MCP-Server | **Daten**: Witz, Datum, Weitergabe an LaraPaper |
+| Modell | **Inhalt**: Auswahl, Übersetzung und Kürzen des Witzes, Reihenfolge der Schritte |
 
 Man kann das Layout in LaraPaper mit Live-Vorschau ändern, ohne dass der Agent oder
 der MCP-Server davon etwas mitbekommt.
@@ -135,14 +136,14 @@ zusätzlich auf Wochentage und Zeitfenster (`weekdays`, `active_from`,
 **keine Zeitsteuerung unseres Projekts**: Neue Inhalte entstehen weiterhin nur auf
 Auftrag.
 
-Mögliche Playlist für die Demo: **Tagesmessage** (unser Webhook-Plugin) →
-**ein Recipe aus dem Katalog** (z. B. Kalender) → wieder Tagesmessage.
+Mögliche Playlist für die Demo: **Witz des Tages** (unser Webhook-Plugin) →
+**ein Recipe aus dem Katalog** (z. B. Kalender) → wieder Witz des Tages.
 
 ## 5. Was sich dadurch am Projekt ändert
 
 | Bisher (Plan in `anleitung.md`) | Mit LaraPaper |
 |---|---|
-| `render_weather_screen` → Playwright → PNG → `sharp` → Datei | `render_weather_screen` → `POST /api/custom_plugins/{uuid}` mit `merge_variables` |
+| `render_joke_screen` → Playwright → PNG → `sharp` → Datei | `render_joke_screen` → `POST /api/custom_plugins/{uuid}` mit `merge_variables` |
 | Eigener Express-Server mit `/api/display`, `/api/setup`, `/api/log` | **entfällt**, das übernimmt LaraPaper |
 | PNG-Größenlimit, Graustufen, 1-px-Linien selbst prüfen | übernimmt LaraPaper und das TRMNL-Framework |
 | `02-layout-spezifikation.md` mit Pixelmaßen | wird zur Vorlage für das Liquid-Markup im Plugin |
@@ -150,7 +151,7 @@ Mögliche Playlist für die Demo: **Tagesmessage** (unser Webhook-Plugin) →
 | `get_device_status` (optional) | `GET /api/devices` bzw. `/api/display/status` |
 
 Die **Tool-Verträge** in `03-mcp-tool-spezifikation.md` (Namen, Beschreibungen,
-Eingabe-Schemas) bleiben fast gleich, nur die Rückgabe von `render_weather_screen` ändert
+Eingabe-Schemas) bleiben fast gleich, nur die Rückgabe von `render_joke_screen` ändert
 sich (keine Datei/URL mehr). Für die Präsentation ist das ideal: *Der Vertrag zum
 Modell ist stabil, die Implementierung dahinter ist austauschbar.*
 

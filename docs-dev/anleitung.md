@@ -7,11 +7,11 @@ bevor du weitergehst).
 
 > **Versionsstand dieser Anleitung:** geprüft im September 2026 gegen Node.js 24 LTS
 > ("Krypton"), `@modelcontextprotocol/server` v2 (Paket-Split von `@modelcontextprotocol/sdk`),
-> Open-Meteo und die TRMNL-BYOS-API (LaraPaper). Vor dem eigentlichen Start lohnt ein
+> die JokeAPI und die TRMNL-BYOS-API (LaraPaper). Vor dem eigentlichen Start lohnt ein
 > kurzer Blick auf die aktuellen Quellen, falls seither Zeit vergangen ist:
 > [nodejs.org/en/download](https://nodejs.org/en/download),
 > [TypeScript-SDK-Repo](https://github.com/modelcontextprotocol/typescript-sdk),
-> [Open-Meteo-Doku](https://open-meteo.com/en/docs),
+> [JokeAPI-Doku](https://v2.jokeapi.dev),
 > [LaraPaper](https://github.com/usetrmnl/larapaper),
 > [Awesome TRMNL](https://github.com/RJDvsFACe/awesome-trmnl) *(Linkziel vor Nutzung prüfen, Community-Listen ändern sich)*.
 
@@ -22,7 +22,7 @@ Festgelegt (siehe auch `README.md`, Abschnitt "Festgelegt"):
 - Diese Anleitung geht von **Windows** als Dev-Umgebung aus (PowerShell-Befehle).
 - BYOS: Wir nutzen **LaraPaper** als vorhandene BYOS-Lösung, keinen eigenen
   BYOS-Server (Details in `06-recherche-trmnl.md`).
-- Koordinaten für die Wetterabfrage: **Ingolstadt**, Breite 48.7665, Länge 11.4258.
+- Datenquelle für den Screen: die **JokeAPI** (frei, ohne API-Key).
 
 ---
 
@@ -32,8 +32,8 @@ Festgelegt (siehe auch `README.md`, Abschnitt "Festgelegt"):
    von Node.js/Playwright-Abhängigkeiten?
 2. Zugang zu LaraPaper prüfen: Weboberfläche erreichbar, API-Token mit den
    nötigen Berechtigungen anlegbar (siehe `06-recherche-trmnl.md`).
-3. Koordinaten von Ingolstadt (Breite 48.7665, Länge 11.4258) in `server/.env`
-   eintragen (siehe Phase 2).
+3. JokeAPI vom Server aus erreichbar? Einmal
+   `curl "https://v2.jokeapi.dev/joke/Programming?lang=de&safe-mode"` aufrufen.
 
 **Checkpoint:** Du kannst dich per SSH mit dem Server verbinden und erreichst
 die LaraPaper-Oberfläche.
@@ -194,88 +194,87 @@ bei einem Testaufruf `"Hallo, <Name>!"` zurück.
 
 ## Phase 3 – MCP-Tools erstellen (ca. 90 Min.)
 
-### Teil A – `get_weather` von Hand bauen
+### Teil A – `get_joke` von Hand bauen
 
 Anatomie eines Tools: **Name**, **Beschreibung**, **Zod-Schema**, **Rückgabe**.
 Die volle Spezifikation steht in `03-mcp-tool-spezifikation.md` – hier die
-Umsetzung in Code, aufgeteilt in `server/src/lib/weather.ts` (Logik) und
-`server/src/tools/getWeather.ts` (MCP-Wrapper):
+Umsetzung in Code, aufgeteilt in `server/src/lib/jokes.ts` (Logik) und
+`server/src/tools/getJoke.ts` (MCP-Wrapper):
 
 ```ts
-// server/src/lib/weather.ts – die eigentliche Logik, transport-unabhängig
-const WEATHER_CODE_MAP: Record<number, string> = {
-  0: 'Klar', 1: 'Überwiegend klar', 2: 'Teilweise bewölkt', 3: 'Bedeckt',
-  45: 'Nebel', 48: 'Nebel mit Reifbildung',
-  51: 'Leichter Nieselregen', 61: 'Leichter Regen', 63: 'Regen', 65: 'Starker Regen',
-  71: 'Leichter Schneefall', 73: 'Schneefall', 75: 'Starker Schneefall',
-  80: 'Regenschauer', 95: 'Gewitter'
-  // vollständige Tabelle: https://open-meteo.com/en/docs (Abschnitt WMO Weather codes)
-};
-
-export interface WeatherResult {
-  temperature: number;
-  condition: string;
-  weatherCode: number;
-  tempMin: number;
-  tempMax: number;
-  unit: 'celsius';
-  fetchedAt: string;
+// server/src/lib/jokes.ts – die eigentliche Logik, transport-unabhängig
+export interface JokeResult {
+  setup: string;
+  punchline: string;
+  lang: 'de' | 'en';
 }
 
-export async function fetchWeather(lat: number, lon: number): Promise<WeatherResult> {
-  const url = new URL('https://api.open-meteo.com/v1/forecast');
-  url.searchParams.set('latitude', String(lat));
-  url.searchParams.set('longitude', String(lon));
-  url.searchParams.set('current', 'temperature_2m,weather_code');
-  url.searchParams.set('daily', 'temperature_2m_max,temperature_2m_min');
-  url.searchParams.set('timezone', 'auto');
+export interface JokeQuery {
+  category: 'Programming' | 'Any';
+  lang: 'de' | 'en';
+  topic?: string;
+}
+
+export async function fetchJoke({ category, lang, topic }: JokeQuery): Promise<JokeResult> {
+  const url = new URL(`https://v2.jokeapi.dev/joke/${category}`);
+  url.searchParams.set('lang', lang);
+  // fest im Code, nicht im Schema. Achtung: set('safe-mode', '') ergibt "safe-mode="
+  // und wird von der JokeAPI stillschweigend ignoriert, deshalb ausdrücklich 'true'
+  url.searchParams.set('safe-mode', 'true');
+  if (topic) url.searchParams.set('contains', topic);
 
   const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-  if (!res.ok) {
-    throw new Error(`Open-Meteo antwortete mit HTTP ${res.status}`);
-  }
   const data = await res.json();
 
-  const code: number = data.current.weather_code;
-  return {
-    temperature: Math.round(data.current.temperature_2m),
-    condition: WEATHER_CODE_MAP[code] ?? 'Unbekannt',
-    weatherCode: code,
-    tempMin: Math.round(data.daily.temperature_2m_min[0]),
-    tempMax: Math.round(data.daily.temperature_2m_max[0]),
-    unit: 'celsius',
-    fetchedAt: new Date().toISOString()
-  };
+  // Kein Treffer kommt als HTTP 400 mit "error": true und code 106
+  if (data.error) {
+    if (data.code === 106) {
+      throw new Error('Kein Witz zu diesem Stichwort. Versuche es ohne topic oder mit lang=en.');
+    }
+    throw new Error(`JokeAPI antwortete mit HTTP ${res.status}: ${data.message}`);
+  }
+
+  // Zweite Sicherung: nie einen Witz durchreichen, den die API selbst nicht als safe markiert
+  if (data.safe !== true) {
+    throw new Error('JokeAPI lieferte einen nicht jugendfreien Witz. Bitte erneut aufrufen.');
+  }
+
+  // single: ein Feld "joke"; twopart: "setup" und "delivery"
+  return data.type === 'twopart'
+    ? { setup: data.setup, punchline: data.delivery, lang: data.lang }
+    : { setup: data.joke, punchline: '', lang: data.lang };
 }
 ```
 
 ```ts
-// server/src/tools/getWeather.ts – dünner MCP-Wrapper um die Logik oben
+// server/src/tools/getJoke.ts – dünner MCP-Wrapper um die Logik oben
 import { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
-import { fetchWeather } from '../lib/weather.js';
+import { fetchJoke } from '../lib/jokes.js';
 
-export function registerGetWeather(server: McpServer) {
+export function registerGetJoke(server: McpServer) {
   server.registerTool(
-    'get_weather',
+    'get_joke',
     {
       description:
-        'Liefert die aktuellen Wetterdaten (Temperatur, Wetterzustand als Text, ' +
-        'Tages-Min- und Maximaltemperatur) fuer einen Standort anhand von Breiten- ' +
-        'und Laengengrad. Nutze dieses Tool immer, wenn eine Tagesmessage oder ein ' +
-        'Display-Screen aktuelle Wetterinformationen enthalten soll.',
+        'Liefert einen kurzen, jugendfreien Witz aus der Kategorie Programmierung oder ' +
+        'gemischt. Mit topic kann nach einem Stichwort gefiltert werden (z. B. coffee ' +
+        'fuer Kaffeewitze). Die Stichwortsuche funktioniert praktisch nur mit lang=en, ' +
+        'der deutsche Bestand ist klein. Nutze es, wenn ein Screen einen Witz zeigen ' +
+        'soll. Erfinde nie selbst einen Witz, sondern rufe das Tool bei Bedarf erneut auf.',
       inputSchema: z.object({
-        lat: z.number().min(-90).max(90).describe('Breitengrad, WGS84'),
-        lon: z.number().min(-180).max(180).describe('Laengengrad, WGS84')
+        category: z.enum(['Programming', 'Any']).default('Programming'),
+        lang: z.enum(['de', 'en']).default('de'),
+        topic: z.string().max(30).optional().describe('Stichwort, z. B. "coffee"')
       })
     },
-    async ({ lat, lon }) => {
+    async (args) => {
       try {
-        const weather = await fetchWeather(lat, lon);
-        return { content: [{ type: 'text', text: JSON.stringify(weather) }] };
+        const joke = await fetchJoke(args);
+        return { content: [{ type: 'text', text: JSON.stringify(joke) }] };
       } catch (err) {
         return {
-          content: [{ type: 'text', text: `Wetterabfrage fehlgeschlagen: ${String(err)}` }],
+          content: [{ type: 'text', text: `Witzabruf fehlgeschlagen: ${String(err)}` }],
           isError: true
         };
       }
@@ -284,10 +283,12 @@ export function registerGetWeather(server: McpServer) {
 }
 ```
 
-Testen im Inspector: Tool `get_weather` mit echten Koordinaten aufrufen, Ergebnis
-gegen die Rückgabestruktur in `03-mcp-tool-spezifikation.md` prüfen.
+Testen im Inspector: Tool `get_joke` einmal ohne Parameter, einmal mit
+`topic: "coffee"` und `lang: "en"` und einmal mit `topic: "kaffee"` und `lang: "de"`
+aufrufen. Der dritte Aufruf muss den Fehlertext mit Handlungsempfehlung liefern.
+Ergebnisse gegen die Rückgabestruktur in `03-mcp-tool-spezifikation.md` prüfen.
 
-### Teil B – `get_date_info` und `render_weather_screen` mit dem Agenten bauen
+### Teil B – `get_date_info` und `render_joke_screen` mit dem Agenten bauen
 
 Statt die Dateien selbst zu tippen, jetzt Claude Code im Projektordner bitten,
 sie nach Spezifikation zu bauen. Beispiel-Auftrag:
@@ -298,7 +299,7 @@ server/src/lib/dateInfo.ts mit einer reinen, deterministischen Funktion
 getDateInfo(), die genau die dort spezifizierte Struktur zurückgibt (ISO-8601-
 Kalenderwoche nach Donnerstagsregel, keine Bibliotheken, nur die eingebaute
 Date-API). Erstelle danach server/src/tools/getDateInfo.ts als duennen MCP-
-Tool-Wrapper analog zu server/src/tools/getWeather.ts.
+Tool-Wrapper analog zu server/src/tools/getJoke.ts.
 ```
 
 Anschließend gemeinsamer Code-Review: Stimmen Feldnamen mit der Spezifikation
@@ -306,18 +307,18 @@ Anschließend gemeinsamer Code-Review: Stimmen Feldnamen mit der Spezifikation
 versehentlich eine externe Bibliothek für reine Datumslogik verwendet (sollte
 laut Spezifikation nicht sein)?
 
-Gleiches Vorgehen für `render_weather_screen` – hier lohnt es sich, Claude Code zusätzlich
+Gleiches Vorgehen für `render_joke_screen` – hier lohnt es sich, Claude Code zusätzlich
 `02-layout-spezifikation.md` lesen zu lassen:
 
 ```text
 Lies docs-dev/02-layout-spezifikation.md und docs-dev/03-mcp-tool-spezifikation.md,
-Abschnitt "render_weather_screen". Erstelle server/src/lib/templates/screen.html als
-HTML/CSS-Vorlage nach dem dort beschriebenen Layout (Platzhalter fuer Wetter,
-Datum, KW, Message). Erstelle danach server/src/lib/render.ts, das mit
+Abschnitt "render_joke_screen". Erstelle server/src/lib/templates/screen.html als
+HTML/CSS-Vorlage nach dem dort beschriebenen Layout (Platzhalter fuer Setup,
+Pointe, Wochentag, Datum, KW; Sonderfall Einzeiler beachten). Erstelle danach server/src/lib/render.ts, das mit
 Playwright (bereits in package.json als Abhaengigkeit) die Vorlage mit echten
 Werten befuellt, als 800x480-PNG rendert, bei Bedarf mit sharp nachbearbeitet
 (Graustufen, Kompression) und unter server/public/images speichert. Erstelle
-zuletzt server/src/tools/renderWeatherScreen.ts als MCP-Tool-Wrapper.
+zuletzt server/src/tools/renderJokeScreen.ts als MCP-Tool-Wrapper.
 ```
 
 ### Mit dem MCP Inspector testen (ohne KI)
@@ -334,15 +335,16 @@ npx @modelcontextprotocol/inspector npx tsx src/mcp-server.ts
 Im geöffneten Browser-Tab: **Connect**, dann Tab **Tools**, jedes Tool einzeln mit
 Testwerten aufrufen und die Rückgabe gegen `03-mcp-tool-spezifikation.md` prüfen.
 
-**Checkpoint:** `get_weather`, `get_date_info` und `render_weather_screen` laufen einzeln
-im Inspector und liefern plausible Ergebnisse; `render_weather_screen` erzeugt eine
+**Checkpoint:** `get_joke`, `get_date_info` und `render_joke_screen` laufen einzeln
+im Inspector und liefern plausible Ergebnisse; `render_joke_screen` erzeugt eine
 Datei unter `server/public/images/`.
 
 **Selbstcheck:**
 - Was passiert technisch zwischen Inspector-Klick und Tool-Antwort (welche
   Prozesse, welches Protokoll)?
-- Was bricht, wenn ich in `get_weather` das Eingabeschema von `z.number()` auf
-  `z.string()` ändere, aber im Inspector weiter eine Zahl eingebe?
+- Was passiert, wenn ich in `get_joke` das Schema für `category` von `z.enum(...)`
+  auf `z.string()` ändere und im Inspector `"Witze"` eingebe? Wer meldet dann den
+  Fehler, Zod oder die JokeAPI, und welcher Fehlertext ist für das Modell hilfreicher?
 - Kann ich den Unterschied zwischen `lib/` (Logik) und `tools/` (MCP-Wrapper)
   ohne Notizen erklären?
 
@@ -366,36 +368,39 @@ claude mcp list
 
 ### Auftrag formulieren
 
-Im Claude-Code-Chat, mit den echten Koordinaten aus `.env`:
+Im Claude-Code-Chat:
 
 ```text
-Hole das aktuelle Wetter für Breitengrad 48.7665 und Längengrad 11.4258 sowie das
-heutige Datum. Schreibe danach eine Tagesmessage nach den Regeln aus
-docs-dev/04-prompt-design.md (max. 120 Zeichen, keine Emojis, passend zu Wetter und
-Datum). Rendere abschließend den Screen mit allen drei Werten.
+Hol einen Programmierwitz und das heutige Datum. Bring den Witz nach den Regeln aus
+docs-dev/04-prompt-design.md auf den Screen (bei Bedarf übersetzen, Setup max. 140,
+Pointe max. 100 Zeichen, keine Emojis). Rendere abschließend den Screen.
 ```
+
+Danach dasselbe mit Thema: *„… einen Kaffeewitz …“*. Spannend ist, ob der Agent von
+selbst auf `topic: "coffee"` und `lang: "en"` kommt und den Witz übersetzt.
 
 ### Beobachten und iterieren
 
 - In welcher Reihenfolge ruft der Agent die Tools auf? Wartet er auf beide
-  Datenquellen, bevor er die Message schreibt?
-- Entspricht die generierte Message dem in `04-prompt-design.md` festgelegten
-  Ton? Falls nicht: System-Prompt/Anweisung präzisieren, nicht das Layout ändern.
-- Ruft der Agent `render_weather_screen` wirklich erst als letzten Schritt auf? Falls er
-  es zu früh aufruft (z. B. ohne Wetterdaten), ist das ein Hinweis auf eine zu
+  Datenquellen, bevor er den Screen rendert?
+- Hält sich die Übersetzung an die Regeln aus `04-prompt-design.md` (Pointe
+  erhalten, Längen, kein erklärtes Wortspiel)? Falls nicht: System-Prompt/Anweisung
+  präzisieren, nicht das Layout ändern.
+- Ruft der Agent `render_joke_screen` wirklich erst als letzten Schritt auf? Falls er
+  es zu früh aufruft (z. B. ohne Witz), ist das ein Hinweis auf eine zu
   unklare Tool-Beschreibung – Testfall für "Bewusst kaputt machen" weiter unten.
 
 **Checkpoint:** Ein vollständiges 800×480-PNG entsteht unter
-`server/public/images/`, mit korrektem Datum, korrekter KW, plausiblem Wetter und
-einer zum Ton passenden Message.
+`server/public/images/`, mit korrektem Datum, korrekter KW und einem Witz aus der
+JokeAPI, sauber in Setup und Pointe getrennt.
 
 **Selbstcheck:**
 - Warum ruft der Agent die Tools in dieser Reihenfolge auf – steht das in den
   Tool-Beschreibungen oder hat er es "erraten"?
-- Was ändert sich, wenn ich die Beschreibung von `get_weather` auf ein einziges
-  Wort kürze?
-- Kann ich erklären, warum `get_date_info` bewusst kein LLM nutzt, `render_weather_screen`
-  aber schon Modell-generierte Eingaben (die Message) entgegennimmt?
+- Was ändert sich, wenn ich die Beschreibung von `get_joke` auf ein einziges
+  Wort kürze? Findet der Agent dann noch den Hinweis zu `lang=en`?
+- Kann ich erklären, warum `get_date_info` bewusst kein LLM nutzt, `render_joke_screen`
+  aber schon vom Modell bearbeitete Eingaben (den übersetzten Witz) entgegennimmt?
 
 ---
 
@@ -489,13 +494,13 @@ den Agenten beauftragst – genau wie in Phase 4. Das Gerät holt ihn beim näch
 Nachfragen (`refresh_rate`) ab.
 
 **Checkpoint:** Nach einem Agenten-Auftrag zeigt das Display spätestens nach einem
-Geräte-Refresh Wetter, Datum, Kalenderwoche und eine passende Tagesmessage.
+Geräte-Refresh den Witz des Tages mit Datum und Kalenderwoche.
 
 **Selbstcheck:**
 - Welcher Teil der Kette gehört zum Gerät (Polling über `refresh_rate`), welcher
   zum Server, welcher zum Agenten?
-- Was sieht das Display, wenn der Agent-Lauf wegen fehlender Wetterdaten
-  abbricht? (Mit `05-fehler-und-fallbacks.md` abgleichen und ausprobieren.)
+- Was sieht das Display, wenn der Agent-Lauf abbricht, weil die JokeAPI nicht
+  erreichbar ist? (Mit `05-fehler-und-fallbacks.md` abgleichen und ausprobieren.)
 - Was müsste man ergänzen, wenn der Screen doch automatisch aktualisiert werden
   soll – und warum wäre dafür kein Agent nötig?
 
@@ -511,6 +516,9 @@ Geräte-Refresh Wetter, Datum, Kalenderwoche und eine passende Tagesmessage.
 | Playwright-Fehler "Executable doesn't exist" | Chromium für Playwright nicht installiert – `npx playwright install chromium` (auf manchen Servern zusätzlich Systemabhängigkeiten, siehe Playwright-Doku) |
 | PNG deutlich über dem Größenlimit | Zu viele Graustufen/Antialiasing im Rendering – Nachbearbeitung mit `sharp` (Graustufen-Palette) prüfen, siehe `05-fehler-und-fallbacks.md` |
 | Gerät zeigt altes Bild trotz neuem Render-Lauf | `filename` in der `/api/display`-Antwort hat sich nicht geändert – das Gerät nutzt den Dateinamen als Cache-Schlüssel und lädt sonst nicht neu |
+| `get_joke` meldet „Kein Witz zu diesem Stichwort“ | Stichwortsuche mit `lang=de` findet im kleinen deutschen Bestand fast nie etwas – `lang=en` verwenden |
+| Trotz `safe-mode` kommen Witze mit `"safe": false` | Parameter als `safe-mode=` (leerer Wert) gesendet, etwa über `searchParams.set('safe-mode', '')`. Die API ignoriert ihn dann. `safe-mode=true` oder `safe-mode` ohne `=` verwenden |
+| Witz zeigt `&szlig;` statt „ß“ | Kein Fehler: Bei Witz 14 ist das die Pointe. Nicht pauschal HTML-Entities dekodieren |
 | Claude Code sieht den MCP-Server nicht | Pfad in `claude mcp add` relativ zum falschen Arbeitsverzeichnis, oder der Server-Prozess bricht beim Start ab – Server erst manuell mit `npx tsx src/mcp-server.ts` testen |
 
 ---
@@ -520,18 +528,18 @@ Geräte-Refresh Wetter, Datum, Kalenderwoche und eine passende Tagesmessage.
 Dieser Abschnitt ist bewusst Teil der Anleitung, nicht optional – laut Lernstrategie
 (`README.md`) oft der lehrreichste Teil einer Demo:
 
-1. **Wetter-API abschalten:** In `server/src/lib/weather.ts` die URL kurzzeitig
-   auf eine ungültige Adresse ändern. Beobachten: Wie reagiert `get_weather`
+1. **JokeAPI abschalten:** In `server/src/lib/jokes.ts` die URL kurzzeitig
+   auf eine ungültige Adresse ändern. Beobachten: Wie reagiert `get_joke`
    (Fehlertext, `isError`)? Wie reagiert der Agent darauf – meldet er den
-   Fehler, oder erfindet er Wetterdaten?
+   Fehler, oder erfindet er einen Witz?
 2. **Falsches Schema zurückgeben:** In `get_date_info` `isoWeek` versehentlich als
    String statt Zahl zurückgeben (Rückgabetext, nicht das Zod-Schema ändern).
-   Beobachten: Meldet `render_weather_screen` einen Fehler? Versteht der Agent die
+   Beobachten: Meldet `render_joke_screen` einen Fehler? Versteht der Agent die
    Fehlermeldung und korrigiert er selbstständig?
-3. **Tool-Beschreibung verschlechtern:** Die Beschreibung von `render_weather_screen` auf
+3. **Tool-Beschreibung verschlechtern:** Die Beschreibung von `render_joke_screen` auf
    ein Wort kürzen ("rendert"). Im selben Auftrag wie in Phase 4 beobachten, ob
    der Agent das Tool noch zuverlässig und zur richtigen Zeit aufruft.
-4. **Timeout simulieren:** In `fetchWeather` das `AbortSignal.timeout(8000)` auf
+4. **Timeout simulieren:** In `fetchJoke` das `AbortSignal.timeout(8000)` auf
    `AbortSignal.timeout(1)` setzen. Beobachten, ob der Fehlerpfad tatsächlich
    greift oder der Prozess stattdessen hängen bleibt.
 
@@ -545,7 +553,7 @@ Für jedes Experiment: Ergebnis in `stolpersteine.md` festhalten, auch wenn nich
 (siehe auch `01-projektuebersicht.md`)
 
 - Wo lohnt sich ein Agent, wo reicht klassischer Code? (Dieses Projekt beantwortet
-  es konkret: Datum/KW = reine Logik im Tool, Message + Ablaufsteuerung = Modell.)
+  es konkret: Datum/KW = reine Logik im Tool, Auswahl/Übersetzung + Ablaufsteuerung = Modell.)
 - Wie sichert man MCP-Server ab, wenn sie über HTTP statt stdio erreichbar sind?
   (Stichwort Host-/Origin-Validierung, siehe Streamable-HTTP-Doku des SDK.)
 - Welche weiteren Tools wären denkbar? (Kalenderanbindung, Ticket-System,
