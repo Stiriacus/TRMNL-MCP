@@ -158,16 +158,141 @@ Modell ist stabil, die Implementierung dahinter ist austauschbar.*
 ## 6. Offene Punkte (vor der Umstellung prüfen)
 
 - [ ] Läuft das Gerät bereits gegen LaraPaper? (Geräteliste, Akku, letzter Kontakt)
-- [ ] Webhook-Plugin anlegen und `merge_variables` per `curl` pushen. Wann erscheint
-      der neue Inhalt: beim nächsten Geräte-Refresh oder erst, wenn die Daten als
-      „stale“ gelten? (`data_stale_minutes` im Plugin prüfen)
-- [ ] `POST /api/display/update` testen: Überschreibt der Push die Playlist dauerhaft
-      oder nur bis zum nächsten Playlist-Wechsel?
+- [x] ~~Wann erscheint ein Webhook-Inhalt?~~ Laut Quellcode beim nächsten Mal, wenn das
+      Plugin in der Playlist an der Reihe ist (siehe 7.2). Am Gerät noch bestätigen.
+- [x] ~~Überschreibt `POST /api/display/update` die Playlist?~~ Nein, nur bis zum
+      nächsten Geräte-Abruf, sobald eine Playlist aktiv ist (siehe 7.2).
 - [ ] Welche `refresh_rate` ist am Gerät eingestellt? Für die Live-Demo kurz
       (z. B. 60 s) setzen, sonst wartet man ewig auf den Screen.
 - [ ] Liquid oder Blade für das Plugin? (Liquid ist portabel zur TRMNL-Cloud und zu
       Recipes, Blade hat die [laravel-trmnl-blade](https://github.com/bnussbau/laravel-trmnl-blade)-Komponenten.)
 - [ ] Danach entscheiden: `docs-dev` (Anleitung Phase 3 + 5, `03`, `05`) auf LaraPaper umstellen
+
+## 7. Push-Logik im Detail (Quellcode-Analyse, Stand 01.10.2026)
+
+Grundlage: LaraPaper `main` mit Laravel 13 und `laravel/mcp` ^0.9.1. Die Dateien
+sind am Ende des Abschnitts aufgelistet.
+
+### 7.1 Was bei jedem Geräte-Abruf passiert
+
+Das Gerät ruft `GET /api/display` auf. `RunDeviceDisplayCycle` entscheidet dann:
+
+1. **Pause oder Schlafmodus** aktiv? Dann kommt das Sleep-Bild, sonst nichts.
+2. **Gespiegeltes Gerät?** Dann zeigt es das Bild des Quellgeräts.
+3. **Playlist:** Von allen aktiven Playlists des Geräts gewinnt die mit den meisten
+   Einschränkungen. Ein Zeitfenster zählt 2 Punkte, Wochentage zählen 1 Punkt. Es
+   wird nur eine Playlist genommen, die gerade aktiv ist und einen Eintrag hat.
+   Innerhalb der Playlist kommt der Eintrag nach dem zuletzt gezeigten
+   (`last_displayed_at`, Reihenfolge nach `order`). Am Ende geht es wieder von vorn
+   los.
+4. **Rendern oder Cache:** Neu gerendert wird nur, wenn die Daten als „stale“ gelten
+   **oder** das Plugin noch kein Bild hat (`current_image = null`). Sonst wird das
+   gespeicherte Bild ausgeliefert.
+5. Nach dem Rendern setzt `GenerateScreenJob` beim Plugin `current_image` und
+   **auch `data_payload_updated_at = now()`**. Danach bekommt das Gerät
+   `current_screen_image`.
+6. **Kein Playlist-Eintrag?** Dann bleibt `current_screen_image` stehen, also das,
+   was zuletzt gerendert oder gepusht wurde.
+
+### 7.2 Folgen pro Weg
+
+| Weg | Wie kommen Inhalte rein? | Wann sind sie auf dem Display? |
+|---|---|---|
+| `POST /api/display/update` (Push) | Markup → `Blade::render` → Bild direkt ans Gerät | Sofort beim nächsten Abruf. **Bei aktiver Playlist überschreibt der übernächste Abruf das Bild wieder.** Ein Push bleibt nur stehen, wenn keine Playlist aktiv ist. |
+| Webhook-Recipe | `POST /api/custom_plugins/{uuid}` schreibt `data_payload` | Sobald das Plugin wieder an der Reihe ist. `isDataStale()` heißt bei Webhooks „in der letzten Stunde aktualisiert“. Weil jedes Rendern den Zeitstempel auf jetzt setzt, wird das Plugin danach praktisch **bei jedem Durchlauf** neu gerendert. |
+| Polling-Recipe | LaraPaper holt `polling_url` selbst ab | Wenn `data_stale_minutes` abgelaufen ist (Standard 60) |
+| **Static-Recipe** | `data_payload` nur über die **Web-Oberfläche** (JSON-Feld im Recipe-Editor) oder den Import. **Es gibt keine API dafür.** | Beim Ändern des **Markups** sofort, weil ein Model-Hook dann `current_image` leert. Beim Ändern nur der **Daten** erst nach `data_stale_minutes`, weil der Hook nur auf Markup-Spalten reagiert. |
+
+Wichtig für den „statischen“ Ansatz: Wer `data_payload` an der Oberfläche vorbei
+ändert, muss **selbst `current_image = null` setzen**. Sonst zeigt das Gerät bis zu
+`data_stale_minutes` lang den alten Inhalt.
+
+### 7.3 Der eingebaute MCP-Server von LaraPaper
+
+LaraPaper bringt schon einen MCP-Server mit (`routes/ai.php`):
+
+- Endpunkt: `/mcp` (HTTP), Middleware `toggle:mcp`, `auth:sanctum`, `ability:mcp`
+- Einschalten mit `TOGGLE_MCP=true` (Lab-/Experimental-Schalter). Dazu einen
+  Sanctum-Token mit der Ability **`mcp`** anlegen.
+- In Claude Code:
+  `claude mcp add --transport http larapaper https://<host>/mcp --header "Authorization: Bearer <token>"`
+
+| Tool | Macht |
+|---|---|
+| `list-recipes`, `get-recipe` | Recipes des Users auflisten, Details lesen (Markup aller Layouts, Strategie, `data_payload`) |
+| `create-recipe` | Neues Recipe (blade/liquid, polling/webhook/static) |
+| `update-recipe-markup` | Markup pro Layout ersetzen. Leert den Bild-Cache, ist also sofort wirksam. |
+| `update-recipe-settings` | Strategie, Polling-URL, `data_stale_minutes`, Renderer |
+| `render-recipe` | Rendert zu **HTML** zur Kontrolle. Erzeugt kein Gerätebild. |
+
+**Lücken:** keine Playlists, keine Geräte, kein Schreiben von `data_payload`. Nur
+Plugins vom Typ `recipe` sind sichtbar, eingebaute Plugin-Typen (Screenshot,
+Image-Webhook …) nicht.
+
+### 7.4 Playlists: Es gibt keine Schnittstelle
+
+Playlists existieren nur in der Livewire-Oberfläche (`playlists.index`). Es gibt
+weder REST-Endpunkte noch MCP-Tools dafür. Wer „Playlist wählen → Eintrag finden →
+Inhalt korrigieren“ per MCP will, muss **LaraPaper erweitern**. Das passt zu Blade und
+PHP: Die neuen Tools sind `laravel/mcp`-Klassen nach dem Muster von
+`ResolvesUserRecipes`, und sie werden in `McpServer::$tools` eingetragen.
+
+Vorschlag für die Tools (alle auf den eingeloggten User eingeschränkt, über
+`device.user_id`):
+
+| Tool | Art | Inhalt |
+|---|---|---|
+| `list-playlists` | lesend | Gerät, Name, `is_active`, Wochentage, Zeitfenster, `refresh_time`, `isActiveNow()`, Anzahl Einträge |
+| `get-playlist` | lesend | Einträge mit `order`, `is_active`, Plugin-ID/-Name/-Typ, Mashup-Info, `last_displayed_at`, „kommt als Nächstes“ |
+| `update-recipe-data` | schreibend | `data_payload` setzen oder mergen, **`current_image = null`**, Größenlimit prüfen (`staticDataPayloadWithinWireLimit`) |
+| `set-playlist-item-active` | schreibend, optional | Eintrag aus- oder einschalten, z. B. einen fehlerhaften Inhalt vorübergehend ausblenden |
+
+Ablauf „Inhalt ist falsch“ für den Agenten:
+`list-playlists` → `get-playlist` → Eintrag erkennen → `get-recipe` →
+`update-recipe-data` (oder `update-recipe-markup`) → `render-recipe` prüfen →
+erscheint, sobald der Eintrag wieder an der Reihe ist.
+
+### 7.5 Sicherheit
+
+- **Blade heißt PHP-Ausführung.** `update-recipe-markup` und `/api/display/update`
+  rendern frei übergebenes Blade. Wer den Token hat, kann also PHP auf dem Server
+  ausführen (`@php … @endphp`). Darum den `mcp`- und den `update-screen`-Token wie ein
+  Server-Passwort behandeln.
+- Daraus folgt: **Inhalte als Daten (`data_payload`) schreiben, Layout nicht vom Agenten
+  ändern lassen.** In Blade escapt `{{ $data['setup'] }}` die Ausgabe. Soll der Agent
+  doch Markup bearbeiten, ist `markup_language: liquid` die sicherere Wahl, weil
+  Liquid in einer Sandbox läuft.
+- Die Webhook-URL ist nur über die UUID geschützt (siehe Weg B).
+
+### 7.6 Zu klären
+
+- [ ] **Darf LaraPaper erweitert werden?** Als Fork, lokaler Patch oder Upstream-PR?
+      Davon hängen Updates und Wartung ab.
+- [ ] **Wie viele MCP-Server?** Variante 1: LaraPaper-`/mcp` für Playlists und Inhalte,
+      dazu unser TS-Server für `get_joke` und `get_date_info`. Variante 2: alles
+      in LaraPaper (PHP). Beides lässt sich im Harness gleichzeitig verbinden.
+- [ ] **Inhalt in `data_payload` (empfohlen) oder im Markup?** Das bestimmt, ob
+      `update-recipe-data` nötig ist.
+- [ ] **Wer bekommt den Token?** Wegen Blade/PHP keinen Token an Agenten mit
+      ungeprüften Eingaben weitergeben.
+- [ ] **Wie schnell muss eine Korrektur sichtbar sein?** Sie erscheint, sobald der
+      Eintrag in der Rotation wieder dran ist (also Länge der Playlist ×
+      `refresh_time`). Braucht es ein „jetzt anzeigen“? Ein Push hält bei aktiver
+      Playlist nur einen Abruf lang.
+- [ ] **Ein Plugin in mehreren Playlists:** Korrigiert man die Daten, ändert sich der
+      Inhalt überall. Ist das gewollt?
+- [ ] **Mashups** (mehrere Plugins auf einem Screen) mit abdecken oder vorerst
+      ausklammern?
+- [ ] **Stabilität:** Der MCP-Server ist ein Lab-Feature und `laravel/mcp` steht noch
+      bei 0.x. Die LaraPaper-Version festschreiben.
+- [ ] **Netz:** Ist `/mcp` von dort erreichbar, wo der Harness läuft (HTTPS, VPN)?
+
+Gelesene Dateien: `routes/api.php`, `routes/web.php`, `routes/ai.php`,
+`app/Actions/Api/RunDeviceDisplayCycle.php`, `app/Jobs/GenerateScreenJob.php`,
+`app/Models/{Plugin,Playlist,PlaylistItem,Device}.php`,
+`app/Http/Controllers/Api/PluginWebhookController.php`,
+`app/Mcp/Servers/McpServer.php`, `app/Mcp/Tools/*`,
+`app/Mcp/Concerns/ResolvesUserRecipes.php`, `config/toggle.php`.
 
 ## Quellen
 
