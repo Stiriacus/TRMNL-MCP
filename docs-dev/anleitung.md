@@ -167,7 +167,7 @@ import { McpServer } from '@modelcontextprotocol/server';
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import * as z from 'zod/v4';
 
-const server = new McpServer({ name: 'trmnl-demo', version: '0.1.0' });
+const server = new McpServer({ name: 'trmnl-display', version: '0.1.0' });
 
 server.registerTool(
   'hello',
@@ -181,7 +181,7 @@ server.registerTool(
 );
 
 void serveStdio(() => server);
-console.error('trmnl-demo MCP-Server läuft auf stdio');
+console.error('trmnl-display MCP-Server läuft auf stdio');
 ```
 
 Starten:

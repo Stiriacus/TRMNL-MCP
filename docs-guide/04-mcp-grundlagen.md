@@ -116,7 +116,7 @@ können.
 → { "jsonrpc": "2.0", "id": 1, "method": "initialize",
     "params": { "clientInfo": { "name": "pi" }, "capabilities": { … } } }
 ← { "jsonrpc": "2.0", "id": 1,
-    "result": { "serverInfo": { "name": "trmnl-demo" }, "capabilities": { "tools": {} } } }
+    "result": { "serverInfo": { "name": "trmnl-display" }, "capabilities": { "tools": {} } } }
 ```
 
 **2. Die Tool-Liste** ist alles, was das Modell über unsere Tools erfährt.
@@ -125,7 +125,7 @@ können.
 → { "jsonrpc": "2.0", "id": 2, "method": "tools/list" }
 ← { "jsonrpc": "2.0", "id": 2, "result": { "tools": [{
       "name": "get_joke",
-      "description": "Liefert einen kurzen, jugendfreien Witz … Nutze es, wenn …",
+      "description": "Liefert einen kurzen, jugendfreien Witz … Nutze es, wann immer …",
       "inputSchema": { "type": "object",
         "properties": { "category": { "type": "string", "enum": ["Programming", "Any"] },
                         "lang": { "type": "string", "enum": ["de", "en"] },

@@ -132,7 +132,7 @@ der Witz später erscheint, gehört nicht hinein.
     *„Liefert einen kurzen, jugendfreien Witz mit Aufbau und Pointe, wahlweise
     Programmierwitz oder gemischt. Mit topic kann nach einem Stichwort gefiltert
     werden (z. B. ‚coffee‘ für Kaffeewitze). Die Stichwortsuche funktioniert praktisch
-    nur mit lang=en, der deutsche Bestand ist klein. Nutze es, wann immer ein Witz
+    nur mit lang=en, der deutsche Bestand ist klein (rund 30 Witze). Nutze es, wann immer ein Witz
     gebraucht wird. Erfinde nie selbst einen Witz, sondern rufe das Tool bei Bedarf
     erneut auf.“*
 

@@ -11,7 +11,7 @@ MCP in standardisierter Form dazu.
 | Begriff | Was es ist | Im Projekt |
 |---|---|---|
 | **Modell (LLM)** | Eine Funktion, in die Text hineingeht und aus der Text herauskommt. Kein Gedächtnis, kein Zugriff auf irgendetwas. | Claude, DeepSeek, ein lokales Qwen über Ollama |
-| **Tool** | Eine Funktion mit Name, Beschreibung und Parameterschema, die das Modell *anfordern* kann | `get_joke(category, lang)` |
+| **Tool** | Eine Funktion mit Name, Beschreibung und Parameterschema, die das Modell *anfordern* kann | `get_joke(category, lang, topic?)` |
 | **Harness** | Die Werkzeugkiste um das Modell. Sie verwaltet den Chat-Kontext, stellt Tools bereit, führt die vom Modell angeforderten Aufrufe aus und prüft Berechtigungen. **Ohne Modell passiert nichts.** | Claude Code, pi |
 | **Agent** | Modell, Harness, Tools und Auftrag zusammen, also ein System, das selbstständig mehrere Schritte bis zum Ziel geht | „Mach den Screen für heute“ |
 | **MCP** | Offenes Protokoll, über das ein Harness Tools aus externen Servern einbindet | Unser `trmnl-display`-Server |

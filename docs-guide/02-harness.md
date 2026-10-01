@@ -165,8 +165,8 @@ Sie soll dem Agenten den Witz des Tages fürs Display liefern und hat **10 Endpu
       Aufbau und Pointe, wahlweise Programmierwitz oder gemischt. Mit `topic` kann
       nach einem Stichwort gefiltert werden (z. B. ‚coffee‘ für Kaffeewitze). Die
       Stichwortsuche funktioniert praktisch nur mit `lang=en`, der deutsche Bestand
-      ist klein. Nutze es, wann immer ein Witz gebraucht wird. Erfinde nie selbst
-      einen Witz.“*
+      ist klein (rund 30 Witze). Nutze es, wann immer ein Witz gebraucht wird.
+      Erfinde nie selbst einen Witz, sondern rufe das Tool bei Bedarf erneut auf.“*
     - Die **Parameter** sind `category` (`Programming` oder `Any`), `lang` (`de` oder
       `en`) und optional `topic`.
     - Die **Rückgabe** ist immer gleich, egal ob `single` oder `twopart`, nämlich

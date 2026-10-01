@@ -131,7 +131,7 @@ flowchart LR
         HS[get_http_status]
     end
     subgraph S2 [MCP-Server trmnl-display]
-        J[get_joke]
+        J[get_joke · get_date_info]
         U[update_page]
         L[list_pages · get_page]
     end

@@ -43,8 +43,8 @@ aus dem LaraPaper das Bild fürs Gerät erzeugt.
 
 ```text
 Hol einen Kaffeewitz und das heutige Datum. Bring den Witz nach den Regeln aus
-docs-dev/04-prompt-design.md auf Deutsch und auf Display-Länge und erzeuge den
-Screen.
+docs-dev/04-prompt-design.md auf Deutsch und auf Display-Länge und stell ihn auf
+die Seite „Witz des Tages“.
 ```
 
 Auf vier Dinge achten wir.
@@ -70,7 +70,7 @@ Denselben Auftrag stellen wir in pi, zuerst mit **DeepSeek** und dann mit einem
 
 | | Claude Code + Claude | pi + DeepSeek | pi + Ollama (lokal) |
 |---|---|---|---|
-| Tools in richtiger Reihenfolge? | | | |
+| Tools in sinnvoller Reihenfolge, ohne Vorgabe? | | | |
 | Witz regelkonform (Pointe erhalten, Längen, keine Emojis)? | | | |
 | Übersetzung gelungen? | | | |
 | Dauer | | | |

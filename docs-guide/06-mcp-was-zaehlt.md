@@ -194,8 +194,9 @@ Dieselbe `lib/`-Funktion lässt sich aus einem MCP-Tool, einem normalen Skript o
 einem Unit-Test aufrufen. Im Projekt hat sich das schon ausgezahlt. Geplant war
 zuerst, das Bild selbst zu rendern (Headless-Browser, PNG). Dann zeigte sich, dass
 LaraPaper fertige Seiten annimmt und selbst rendert. Getauscht wurde nur `lib/`
-(`render.ts` → `larapaper.ts`). Das Schema des Witz-Tools, also der **Vertrag zum
-Modell**, ist gleich geblieben. In der Beschreibung hat sich nur ein Satz geändert:
+(`render.ts` → `larapaper.ts`). Das Schema des damaligen Witz-Tools, also der
+**Vertrag zum Modell**, ist gleich geblieben (dass das Tool später in `update_page`
+aufging, war eine Frage des Zuschnitts, siehe Regel 6). In der Beschreibung hat sich nur ein Satz geändert:
 wann das Ergebnis zu sehen ist. Das ist die Wirkung, nicht die
 Technik, und deshalb steht der Satz überhaupt dort (Regel 1).
 
