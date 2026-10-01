@@ -21,19 +21,19 @@ der Agent entscheidet selbst, wann er welches Tool aufruft.
 | Datum & Kalenderwoche | Deterministische Logik | Node.js, ISO-8601-Woche aus Systemzeit |
 | Auswahl, Übersetzung, Kürzen | Sprachliche Arbeit am Witz | LLM (z. B. Claude) |
 | MCP-Server | Stellt Tools für den Agenten bereit | Node.js, `@modelcontextprotocol/server`, `zod` |
-| Rendering | HTML → 800×480-PNG | Headless-Browser (Playwright), serverseitig |
-| Auslieferung | Bild an das Gerät | BYOS-Server, `GET /api/display` |
+| Seite hochladen | Witz und Datum in eine feste Blade-Vorlage, als Seite (static-Recipe) nach LaraPaper | MCP-Server, LaraPaper-Archiv-Schnittstelle (`POST /api/plugin_settings/{id}/archive`) |
+| Rendering und Auslieferung | Seite → 800×480-Bild, Playlist, Bild an das Gerät | LaraPaper (BYOS-Server) mit TRMNL-Framework |
 
 Eine bewusste Design-Entscheidung dieses Projekts: **es gibt keine Zeitsteuerung**
 (kein Cron, kein Scheduler). Ein neuer Screen entsteht nur, wenn jemand den Agenten
 beauftragt ("Mach mir den Screen für heute"). Das Gerät fragt zwar selbst
-regelmäßig beim Server nach (`refresh_rate`), bekommt aber so lange den zuletzt
-gerenderten Screen, bis der Agent einen neuen erzeugt.
+regelmäßig bei LaraPaper nach, bekommt aber so lange die zuletzt hochgeladene
+Seite, bis der Agent sie überschreibt.
 
 Innerhalb eines Agenten-Laufs gilt trotzdem die Frage aus dem Briefing "Wo lohnt
 sich ein Agent, wo reicht klassischer Code?": Datum und Kalenderwoche sind reine
-Logik, Witzabruf und Rendering sind deterministische API-Aufrufe – deshalb
-stecken sie als Code in den Tools. Nur Auswahl, Übersetzung und Kürzen des Witzes
+Logik, Witzabruf und Upload sind deterministische API-Aufrufe – deshalb
+stecken sie als Code in den Tools. Das Rendern übernimmt LaraPaper. Nur Auswahl, Übersetzung und Kürzen des Witzes
 und die Entscheidung, welches Tool wann aufgerufen wird, übernimmt das Sprachmodell.
 
 ```
@@ -48,10 +48,10 @@ und die Entscheidung, welches Tool wann aufgerufen wird, übernimmt das Sprachmo
                        │  get_date_info          │   src/lib/*.ts
                        │  render_joke_screen     │
                        └───────────┬─────────────┘
-                                   │ schreibt PNG
+                                   │ lädt Seite hoch (ZIP: settings.yml + Blade)
                        ┌───────────▼─────────────┐
-                       │   BYOS-Server (Express) │   src/byos/server.ts
-                       │  GET /api/display       │
+                       │   LaraPaper (BYOS)      │   rendert die Seite,
+                       │  Seiten + Playlist      │   Playlist rotiert
                        └───────────┬─────────────┘
                                    │ HTTP (Polling)
                        ┌───────────▼─────────────┐
@@ -65,7 +65,7 @@ und die Entscheidung, welches Tool wann aufgerufen wird, übernimmt das Sprachmo
 |---|---|
 | `get_joke(category, lang, topic?)` | Liefert einen jugendfreien Witz (Setup und Pointe) |
 | `get_date_info()` | Liefert Datum, Wochentag, ISO-Kalenderwoche |
-| `render_joke_screen(joke, date)` | Baut das 800×480-Bild und legt es auf dem Server ab |
+| `render_joke_screen(joke, date)` | Überschreibt die Seite „Witz des Tages“ in LaraPaper |
 | `show_message(text)` *(optional)* | Zeigt eine freie Nachricht an, ohne Witz/Datum |
 | `get_device_status()` *(optional)* | Akku, WLAN-Signal, Firmware-Version des Geräts |
 

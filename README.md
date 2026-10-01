@@ -1,10 +1,10 @@
 # TRMNL E-Ink Display mit MCP und Agenten
 
 Lernprojekt: Ein Agent holt einen Witz aus der JokeAPI, wählt ihn aus, überträgt ihn bei
-Bedarf ins Deutsche und rendert daraus einen „Witz des Tages“-Screen für ein TRMNL
-E-Ink-Display (BYOS-Modus). Datenbeschaffung und Rendering
-laufen über MCP-Tools, die von Claude Code (oder einem anderen MCP-fähigen Client)
-aufgerufen werden.
+Bedarf ins Deutsche und bringt ihn als „Witz des Tages“ auf ein TRMNL E-Ink-Display
+(BYOS-Modus mit LaraPaper). Datenbeschaffung und das Hochladen der Seite nach
+LaraPaper laufen über MCP-Tools, die von Claude Code (oder einem anderen MCP-fähigen
+Client) aufgerufen werden. LaraPaper rendert die Seite und zeigt sie in der Playlist.
 
 Dieses Paket enthält die **Konzeption** – reine Markdown-Dokumente. Der eigentliche
 Code entsteht Schritt für Schritt beim Durcharbeiten von `docs-dev/anleitung.md`
@@ -29,7 +29,7 @@ Code-Gerüst zum Auspacken.
 | `docs-dev/05-fehler-und-fallbacks.md` | Ausfallszenarien und Systemverhalten |
 | `docs-dev/anleitung.md` | Schritt-für-Schritt-Anleitung (Phase 0–5), Windows, mit Codebeispielen |
 | `docs-dev/stolpersteine.md` | Leeres Lernlog zum Ausfüllen während der Arbeit |
-| `docs-dev/06-recherche-trmnl.md` | Recherche: LaraPaper (Webhook-Plugins, Playlists, Markup-API), Seeed-Kit |
+| `docs-dev/06-recherche-trmnl.md` | Recherche: LaraPaper (Push-Logik im Quellcode, Archiv-Schnittstelle für Seiten, Playlists), Seeed-Kit |
 | `docs-dev/07-weitere-mcp-tools.md` | Weitere Tools (HTTP-Status, Zitat, Geschichte) und Tagesplaylist |
 
 **Empfohlene Lesereihenfolge:** `01-projektuebersicht.md` → `02-layout-spezifikation.md`

@@ -19,37 +19,36 @@ melden, **keine Werte erfinden**.
 | JokeAPI-Rate-Limit (120 Anfragen pro Minute) | HTTP 429 | `isError: true` mit Hinweis, kurz zu warten. Bei einem Agenten, der „nur noch einen Witz“ holt, durchaus erreichbar |
 | LLM / Harness nicht erreichbar | Kein Agenten-Lauf möglich | Kein neuer Screen, der zuletzt gerenderte bleibt aktiv – bewusst akzeptiert, da es keine Zeitsteuerung gibt |
 | Agent liefert zu langen Witz | Zeichenlimit-Check in `render_joke_screen` | Setup auf 140, Pointe auf 100 Zeichen kürzen (an Wortgrenze, mit "…") und Warnung im Tool-Ergebnis zurückgeben, damit der Agent nachbessern kann |
-| Rendering schlägt fehl (Headless-Browser crasht, Timeout) | Exception in `render_joke_screen` / `src/lib/render.ts` | Zuletzt erfolgreich gerenderte PNG-Datei bleibt unverändert auf dem Server liegen und wird weiter ausgeliefert |
-| Gerenderte PNG-Datei zu groß (> ca. 90 KB) | Dateigrößen-Check nach dem Rendern | Automatische Nachbearbeitung: Graustufen-Palette reduzieren, PNG neu komprimieren; hilft das nicht, `isError: true` mit Hinweis an den Agenten |
-| BYOS-Server nicht erreichbar | Gerät bekommt keine Antwort auf `/api/display` | Liegt außerhalb der Software-Kontrolle dieses Projekts; TRMNL-Firmware zeigt in diesem Fall je nach Konfiguration den letzten Screen oder eine Geräte-eigene Fehleranzeige – vor dem Test in der aktuellen TRMNL-Doku nachsehen |
-| Gerät meldet niedrige Akkuspannung | `Battery-Voltage`-Header bei `/api/display`-Anfrage | `refresh_rate` in der Antwort erhöhen (z. B. auf 3600s), um Akku zu schonen; siehe `get_device_status` |
+| LaraPaper beim Upload nicht erreichbar / Timeout | `fetch` in `lib/larapaper.ts` schlägt fehl | `isError: true`. Die Seite in LaraPaper bleibt unverändert, das Display zeigt weiter den letzten Witz. Agent meldet den Fehler und behauptet nicht „fertig“ |
+| Token ungültig (HTTP 401) | Antwort der Archiv-Schnittstelle | `isError: true` mit „Token ungültig oder abgelaufen“. Das Modell kann das nicht beheben und soll nicht erneut versuchen |
+| Upload abgelehnt (HTTP 404, 422, 500) | Antwort der Archiv-Schnittstelle | `isError: true` mit Status und Meldung. Das ist ein Fehler im Server-Code (ZIP-Aufbau, falsche ID), kein Fall für das Modell. Alte Seite bleibt aktiv |
+| Upload erfolgreich, Display zeigt alten Inhalt | Vorschau in LaraPaper neu, Gerät alt | Kein Ausfall: Die Seite ist in der Playlist noch nicht wieder dran. Fehlt die Revisionsmarke, rendert LaraPaper erst nach `refresh_interval` neu (siehe `06`, Abschnitt 7.2) |
+| Rendering in LaraPaper schlägt fehl (Fehler in der Vorlage) | LaraPaper-Log, Fehlerbild auf dem Display | LaraPaper zeigt ein eigenes Fehlerbild mit dem Namen der Seite. Deshalb jede Vorlagenänderung zuerst in der Vorschau prüfen |
+| LaraPaper für das Gerät nicht erreichbar | Gerät bekommt keine Antwort auf `/api/display` | Liegt außerhalb der Software-Kontrolle dieses Projekts; TRMNL-Firmware zeigt in diesem Fall je nach Konfiguration den letzten Screen oder eine Geräte-eigene Fehleranzeige – vor dem Test in der aktuellen TRMNL-Doku nachsehen |
+| Gerät meldet niedrige Akkuspannung | `get_device_status` | Refresh-Intervall des Geräts in LaraPaper erhöhen (z. B. auf 3600 s), um den Akku zu schonen |
 
 ## "Letzter guter Stand" – technische Umsetzung
 
-`src/byos/server.ts` liefert bei `/api/display` immer die zuletzt von
-`render_joke_screen` erzeugte Datei aus einem einzigen bekannten
-Pfad (`public/images/current.png`). Ein neuer Render-Lauf schreibt zunächst in
-eine temporäre Datei und ersetzt `current.png` erst nach erfolgreicher Prüfung
-(Dateigröße, gültiges PNG) atomar (`fs.rename`). So sieht das Gerät nie eine
-halb geschriebene oder fehlerhafte Datei.
+Den liefert LaraPaper. Ein Upload ersetzt die Seite in einem Schritt
+(`updateOrCreate`). Scheitert er, bleibt die alte Seite vollständig erhalten, und das
+Gerät bekommt weiter ihr gespeichertes Bild. Damit ein Upload nicht an halben Daten
+scheitert, baut `lib/larapaper.ts` das ZIP vollständig im Speicher und schickt es erst
+dann ab.
 
-## Offene Design-Entscheidung: Rendering-Methode
+Eine Lücke bleibt: Ein Upload mit **inhaltlich** kaputter Vorlage (z. B. Blade-Fehler)
+wird angenommen, und LaraPaper zeigt dann sein Fehlerbild. Deshalb ändert der Agent nie
+die Vorlage, und Vorlagenänderungen durch Menschen werden zuerst in der Vorschau
+geprüft.
 
-Das Briefing nennt dies explizit als offenen Punkt: **Headless-Browser
-(Playwright/Puppeteer) vs. Bildbibliothek** (z. B. `@napi-rs/canvas`, SVG + `sharp`).
+## Entschiedene Design-Frage: Rendering-Methode
 
-Der Code in diesem Projekt nutzt **Playwright** als Standard, weil:
+Das Briefing nannte als offenen Punkt: **Headless-Browser (Playwright/Puppeteer) vs.
+Bildbibliothek** (z. B. `@napi-rs/canvas`, SVG + `sharp`). Entschieden ist: **weder
+noch**. LaraPaper rendert selbst (HTML → Bild, Graustufen, Größenlimit) mit dem
+TRMNL-Framework. Der MCP-Server lädt nur die Seite hoch (siehe `06`, Abschnitt 7.7).
 
-- HTML/CSS zum Layouten einfacher iterierbar ist als Canvas-Zeichenbefehle,
-- die Layout-Spezifikation (`02-layout-spezifikation.md`) direkt als CSS
-  übersetzbar ist,
-- für ein Lernprojekt der Zusatzaufwand (Chromium-Installation) vertretbar ist.
-
-Nachteil: Chromium braucht mehr Ressourcen als eine reine Bildbibliothek – auf
-sehr kleiner Server-Hardware (z. B. Raspberry Pi Zero) kann das spürbar sein. In
-diesem Fall ist der Wechsel zu einer SVG-Vorlage plus `sharp`-Rendering eine
-sinnvolle spätere Optimierung; die Schnittstelle von `render_joke_screen` (Eingabe:
-Witz/Datum, Ausgabe: Dateiname + URL) bliebe dabei unverändert.
+Die Schnittstelle von `render_joke_screen` zum Modell (Name, Eingabeschema) ist
+dabei gleich geblieben. Nur die Rückgabe enthält keinen Dateinamen und keine URL mehr.
 
 ## Bewusst Kaputtes einplanen (siehe auch `anleitung.md`)
 
