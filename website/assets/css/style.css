@@ -209,14 +209,6 @@ h2:hover .heading-anchor, h3:hover .heading-anchor { opacity: 1; }
 .article li + li { margin-top: 4px; }
 .article li > p { margin-bottom: 6px; }
 .article strong { color: var(--brown-900); font-weight: 650; }
-/* Kernaussagen: fett im Fließtext = Textmarker in Messing, zum Überfliegen */
-.article p strong, .article li strong, .article blockquote strong {
-  padding: 0 .12em; margin: 0 -.06em;
-  background: linear-gradient(180deg, transparent 58%, rgba(220, 192, 122, .5) 58%, rgba(220, 192, 122, .5) 92%, transparent 92%);
-  -webkit-box-decoration-break: clone; box-decoration-break: clone;
-}
-.article table strong, .article .tab-btn strong, .article summary strong { background: none; padding: 0; margin: 0; }
-@media print { .article p strong, .article li strong { background: none; } }
 .article hr { border: 0; height: 1px; background: var(--border); margin: 40px 0; }
 
 .article blockquote {

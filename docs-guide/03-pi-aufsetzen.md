@@ -51,14 +51,14 @@ aussehen.
 === "Anthropic Messages"
     ```json
     { "type": "tool_use", "id": "toolu_01", "name": "get_weather",
-      "input": { "lat": 52.52, "lon": 13.41 } }
+      "input": { "lat": 48.77, "lon": 11.43 } }
     ```
 
 === "OpenAI Chat Completions"
     ```json
     { "tool_calls": [{ "id": "call_01", "type": "function",
       "function": { "name": "get_weather",
-                    "arguments": "{\"lat\":52.52,\"lon\":13.41}" } }] }
+                    "arguments": "{\"lat\":48.77,\"lon\":11.43}" } }] }
     ```
 
 OpenAI übergibt die Argumente als **String** mit JSON darin, Anthropic dagegen als

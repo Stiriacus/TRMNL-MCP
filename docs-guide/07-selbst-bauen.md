@@ -80,17 +80,17 @@ Die Wetterdaten kommen von [Open-Meteo](https://open-meteo.com), frei und ohne
 API-Key. So sieht die Antwort roh aus.
 
 ```bash
-curl "https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1"
+curl "https://api.open-meteo.com/v1/forecast?latitude=48.77&longitude=11.43&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1"
 ```
 
 ```json
 {
-  "latitude": 52.52, "longitude": 13.419998, "generationtime_ms": 0.086,
-  "utc_offset_seconds": 7200, "timezone": "Europe/Berlin", "elevation": 38.0,
+  "latitude": 48.78, "longitude": 11.440001, "generationtime_ms": 0.089,
+  "utc_offset_seconds": 7200, "timezone": "Europe/Berlin", "elevation": 375.0,
   "current_units": { "temperature_2m": "°C", "weather_code": "wmo code", … },
-  "current": { "time": "2026-10-01T00:30", "temperature_2m": 17.0, "weather_code": 3 },
+  "current": { "time": "2026-10-01T13:00", "temperature_2m": 21.6, "weather_code": 3 },
   "daily_units": { … },
-  "daily": { "time": ["2026-10-01"], "temperature_2m_max": [24.3], "temperature_2m_min": [14.0] }
+  "daily": { "time": ["2026-10-01"], "temperature_2m_max": [24.3], "temperature_2m_min": [7.3] }
 }
 ```
 
@@ -103,12 +103,12 @@ curl "https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&curr
 
 ??? question "Welche Felder geben wir zurück?"
     ```json
-    { "temperature": 17, "condition": "Bedeckt", "weatherCode": 3,
-      "tempMin": 14, "tempMax": 24, "unit": "celsius", "fetchedAt": "…" }
+    { "temperature": 22, "condition": "Bedeckt", "weatherCode": 3,
+      "tempMin": 7, "tempMax": 24, "unit": "celsius", "fetchedAt": "…" }
     ```
     - `weather_code: 3` versteht das Modell nicht zuverlässig, **„Bedeckt“ schon**.
       Die Übersetzung ist eine feste Tabelle und gehört in Code (Regel 4).
-    - **Temperaturen sind gerundet**, denn auf dem Display steht „17°“ und nicht „17.0“.
+    - **Temperaturen sind gerundet**, denn auf dem Display steht „22°“ und nicht „21.6“.
     - `generationtime_ms`, `elevation` und `*_units` **fliegen raus**, weil sie nur
       Ballast im Kontext wären.
 
@@ -118,8 +118,8 @@ curl "https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&curr
 
 ```ts
 inputSchema: z.object({
-  lat: z.number().min(-90).max(90).describe('Breitengrad, WGS84, z. B. 52.52'),
-  lon: z.number().min(-180).max(180).describe('Längengrad, WGS84, z. B. 13.405')
+  lat: z.number().min(-90).max(90).describe('Breitengrad, WGS84, z. B. 48.77'),
+  lon: z.number().min(-180).max(180).describe('Längengrad, WGS84, z. B. 11.43')
 })
 ```
 

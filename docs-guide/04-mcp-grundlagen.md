@@ -27,24 +27,9 @@ jedes Mal im Format der jeweiligen Anwendung. Das hatte vier Folgen.
 
 === "Vorher baut jeder alles selbst"
 
-    ```mermaid
-    flowchart LR
-        subgraph Apps [KI-Anwendungen]
-            CC[Claude Desktop]
-            GP[ChatGPT]
-            IDE[IDE]
-        end
-        subgraph Sys [Systeme]
-            G[GitHub]
-            DB[Datenbank]
-            W[Wetter-API]
-        end
-        CC -->|Eigenbau| G & DB & W
-        GP -->|Eigenbau| G & DB & W
-        IDE -->|Eigenbau| G & DB & W
-    ```
+    ![Vorher: jede KI-Anwendung bindet jedes System selbst an](img/vorher-eigenbau.svg)
 
-    **3 Anwendungen × 3 Systeme = 9 Integrationen**, jede anders gebaut und jede
+    Jeder Pfeil ist ein Eigenbau. **3 Anwendungen × 3 Systeme = 9 Integrationen**, jede anders gebaut und jede
     einzeln zu pflegen. Bei *N* Anwendungen und *M* Systemen sind es *N × M*.
 
 === "Mit MCP einmal bauen, überall nutzen"
@@ -151,7 +136,7 @@ können.
 
 ```json
 → { "jsonrpc": "2.0", "id": 3, "method": "tools/call",
-    "params": { "name": "get_weather", "arguments": { "lat": 52.52, "lon": 13.41 } } }
+    "params": { "name": "get_weather", "arguments": { "lat": 48.77, "lon": 11.43 } } }
 ← { "jsonrpc": "2.0", "id": 3, "result": {
       "content": [{ "type": "text",
                     "text": "{\"temperature\":18,\"condition\":\"Klar\",…}" }],
@@ -219,4 +204,4 @@ Das ist der Kern von MCP.
 !!! example "Denselben Server in beiden Harnesses zeigen"
     1. In pi `/mcp` aufrufen. `trmnl-display` ist mit seinen Tools sichtbar.
     2. In Claude Code `/mcp` aufrufen. Es ist derselbe Server mit denselben Tools.
-    3. In beiden dieselbe Frage stellen, etwa *„Wie ist das Wetter in Berlin?“*
+    3. In beiden dieselbe Frage stellen, etwa *„Wie ist das Wetter in Ingolstadt?“*

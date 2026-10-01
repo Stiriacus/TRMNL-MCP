@@ -36,7 +36,7 @@ was hier gezeigt wird, reicht das.
 ## Akt 1 · Der Tagesscreen (Claude Code)
 
 ```text
-Hole das aktuelle Wetter für Berlin und das heutige Datum. Schreibe danach eine
+Hole das aktuelle Wetter für Ingolstadt und das heutige Datum. Schreibe danach eine
 Tagesmessage nach den Regeln aus docs-dev/04-prompt-design.md und erzeuge den
 Tagesscreen.
 ```
@@ -46,7 +46,7 @@ Auf vier Dinge achten wir.
 1. **Die Reihenfolge.** Das Modell holt erst Wetter und Datum (oft parallel) und ruft
    `render_weather_screen` zuletzt auf. Das steht in keinem Code, sondern **nur in den
    Tool-Beschreibungen**, die wir auf Seite 7 geschrieben haben.
-2. **Die Koordinaten.** Im Auftrag steht „Berlin“, das Tool will `lat` und `lon`.
+2. **Die Koordinaten.** Im Auftrag steht „Ingolstadt“, das Tool will `lat` und `lon`.
    Das Modell **übersetzt selbst.**
 3. **Die Tool-Ergebnisse** im Verlauf aufklappen. Das ist das JSON aus unserem Server.
 4. **Das Ergebnis.** Das PNG öffnen oder mit LaraPaper nach dem nächsten Refresh aufs

@@ -19,7 +19,7 @@ MCP in standardisierter Form dazu.
 ## Das Modell ruft nichts selbst auf
 
 Das ist die wichtigste Einsicht. Das Modell schreibt nur eine **strukturierte Bitte**,
-etwa „ich möchte `get_weather` mit `lat=52.52, lon=13.41` aufrufen“. Ausgeführt
+etwa „ich möchte `get_weather` mit `lat=48.77, lon=11.43` aufrufen“. Ausgeführt
 wird der Aufruf vom **Harness**. Das Ergebnis kommt als Text zurück in den Kontext, und
 das Modell macht weiter.
 
@@ -31,7 +31,7 @@ sequenceDiagram
     participant T as Tool (MCP-Server)
     U->>H: "Mach den Screen für heute"
     H->>M: Auftrag + Liste verfügbarer Tools
-    M-->>H: tool_use: get_weather(52.52, 13.41)
+    M-->>H: tool_use: get_weather(48.77, 11.43)
     H->>T: ausführen
     T-->>H: {"temperature": 18, "condition": "Klar", …}
     H->>M: Ergebnis

@@ -23,8 +23,8 @@ Alle Tools nutzen [Zod](https://zod.dev/) für das Eingabeschema, wie es die akt
 
 ```ts
 z.object({
-  lat: z.number().min(-90).max(90).describe('Breitengrad, WGS84, z. B. 52.52'),
-  lon: z.number().min(-180).max(180).describe('Längengrad, WGS84, z. B. 13.405')
+  lat: z.number().min(-90).max(90).describe('Breitengrad, WGS84, z. B. 48.77'),
+  lon: z.number().min(-180).max(180).describe('Längengrad, WGS84, z. B. 11.43')
 })
 ```
 
@@ -88,7 +88,8 @@ verwenden – das ist die zentrale Lernbotschaft dieses Tools.
 
 **Beschreibung (für den Agenten):**
 > "Erzeugt den Wetter-Tagesscreen für das E-Ink-Display (800×480 Pixel, Graustufen)
-> und legt ihn ab. Das Gerät holt ihn beim nächsten Refresh selbst. Eingaben:
+> und übergibt die Daten an das Wetter-Plugin in LaraPaper, das den Screen rendert.
+> Das Gerät zeigt ihn beim nächsten Refresh. Eingaben:
 > weather = Ergebnis von get_weather, unverändert übernehmen; date = Ergebnis von
 > get_date_info; message = eine Tagesmessage, die du selbst schreibst (max. 120
 > Zeichen, keine Emojis). Rufe es als letzten Schritt auf. Nur für diesen Screen
