@@ -10,7 +10,7 @@ Alle APIs wurden am 30.09.2026 live getestet und funktionieren ohne API-Key.
 
 | Server | Tools | Zweck |
 |---|---|---|
-| `trmnl-display` (bestehend) | `get_joke`, `get_date_info`, `render_joke_screen`, **neu:** `update_plugin`, `show_message` | Witz des Tages und alles rund ums Display |
+| `trmnl-display` (bestehend) | `get_joke`, `get_date_info`, `render_joke_screen`, **neu:** `update_plugin`, `list_plugins`, `get_plugin`, `show_message` | Witz des Tages und alles rund ums Display |
 | `tagesinhalte` (neu) | `get_http_status`, `get_quote_of_the_day`, `get_on_this_day` | Reine Datenquellen, wissen nichts vom Display |
 
 `get_joke` ist das Haupttool des Projekts und in `03-mcp-tool-spezifikation.md`
@@ -26,9 +26,17 @@ server/src/
 ├── lib/
 │   ├── jokes.ts                                            ← aus 03 (trmnl-display)
 │   ├── httpStatus.ts  quotes.ts  onThisDay.ts              ← API-Aufrufe
-│   └── larapaper.ts                                        ← Webhook / display/update
+│   └── larapaper.ts                                        ← Seiten auflisten, lesen, hochladen
 └── tools/ …
+server/templates/
+└── witz.blade.php  zitat.blade.php  geschichte.blade.php  http.blade.php  nachricht.blade.php
 ```
+
+Alle Display-Tools laufen über **eine** Funktion in `lib/larapaper.ts`, die eine
+Seite komplett hochlädt: `pushPage(plugin, data)`. Sie lädt die Vorlage, setzt die
+Revisionsmarke, baut `settings.yml`, packt das ZIP und schickt es an die
+Archiv-Schnittstelle (Details: `03-mcp-tool-spezifikation.md`, `render_joke_screen`,
+und `06-recherche-trmnl.md`, Abschnitt 7.7).
 
 ---
 
@@ -108,13 +116,16 @@ Katastrophen. Die Auswahl überlassen wir bewusst dem Modell (siehe Beschreibung
 
 ## `update_plugin` (Server `trmnl-display`)
 
-Befüllt ein LaraPaper-Webhook-Plugin (siehe `06-recherche-trmnl.md`, Weg B).
+Überschreibt eine der vorbereiteten Seiten in LaraPaper (static-Recipe, siehe
+`06-recherche-trmnl.md`, Abschnitt 7.7).
 
 **Beschreibung (für den Agenten):**
-> "Schreibt Inhalte in eines der vorbereiteten Display-Plugins (zitat, geschichte,
-> http). Das Layout ist im Plugin festgelegt – übergib nur die Felder, die das
-> jeweilige Plugin erwartet. Texte vorher auf Display-Länge kürzen (max. 160 Zeichen
-> pro Feld), keine Emojis. Für den Witz des Tages ist render_joke_screen zuständig."
+> "Schreibt Inhalte in eine der vorbereiteten Display-Seiten (zitat, geschichte,
+> http) und ersetzt dabei den bisherigen Inhalt. Das Layout ist festgelegt – übergib
+> nur die Felder, die die jeweilige Seite erwartet. Texte vorher auf Display-Länge
+> kürzen (max. 160 Zeichen pro Feld), keine Emojis. Die Seite erscheint, sobald sie in
+> der Playlist wieder an der Reihe ist. Für den Witz des Tages ist render_joke_screen
+> zuständig."
 
 **Eingabeschema:**
 ```ts
@@ -130,25 +141,101 @@ z.discriminatedUnion('plugin', [
 ```
 
 **Warum `discriminatedUnion`:** Das Modell sieht im Schema genau, welche Felder zu
-welchem Plugin gehören. Ein generisches `fields: z.record(z.any())` wäre bequemer,
+welcher Seite gehören. Ein generisches `fields: z.record(z.any())` wäre bequemer,
 würde aber falsche Feldnamen erst im Display sichtbar machen (leere Platzhalter).
 
-**Implementierung:** Plugin-Name → UUID aus `.env` (`LARAPAPER_PLUGIN_ZITAT=…`), dann
-`POST /api/custom_plugins/{uuid}` mit `{ "merge_variables": fields }`. Die UUIDs
-bekommt das Modell **nie zu sehen**, denn sie sind Zugangsdaten.
+**Implementierung:** `pushPage(plugin, fields)`. Die Zuordnung Seite → `trmnlp_id`
+steht in `.env` (`LARAPAPER_PAGE_ZITAT=…`), die Vorlage in
+`server/templates/{plugin}.blade.php`. `fields` landen ausschließlich in
+`static_data`, nie im Markup.
+
+**Rückgabe:** `{ "plugin": "zitat", "status": "updated", "rev": "…", "hint": "…" }`
+
+---
+
+## Inhalte prüfen und korrigieren: `list_plugins` und `get_plugin`
+
+Wenn auf dem Display etwas Falsches steht, soll der Agent die betroffene Seite
+finden, ihren aktuellen Inhalt lesen und gezielt korrigieren können. Ohne
+Lese-Tools könnte er nur blind neu schreiben.
+
+### `list_plugins`
+
+**Beschreibung (für den Agenten):**
+> "Listet die Display-Seiten auf, die du bearbeiten kannst, mit Anzeigename und
+> letzter Änderung. Nutze es, wenn der Nutzer einen Fehler auf dem Display meldet und
+> unklar ist, welche Seite betroffen ist."
+
+**Eingabeschema:** keines.
+
+**Rückgabe:**
+```json
+{
+  "plugins": [
+    { "plugin": "witz",       "name": "Witz des Tages",    "found": true },
+    { "plugin": "zitat",      "name": "Zitat des Tages",   "found": true },
+    { "plugin": "geschichte", "name": "Heute vor …",       "found": false }
+  ],
+  "other": ["Kalender", "Wetter (Recipe)"]
+}
+```
+
+**Implementierung:** `GET /api/plugin_settings` liefert alle Plugins des Users
+(`id` = `trmnlp_id`, `name`). Das Tool gleicht sie mit der `.env`-Zuordnung ab.
+`found: false` heißt, die Seite wurde in LaraPaper gelöscht oder die ID in `.env`
+stimmt nicht. `other` zeigt fremde Seiten nur mit Namen, **bearbeiten lassen sie sich
+nicht**: Sie sind nicht in der Zuordnung, und ein Upload würde sie komplett
+überschreiben.
+
+### `get_plugin`
+
+**Beschreibung (für den Agenten):**
+> "Liefert den aktuellen Inhalt einer Display-Seite (die Felder, wie sie zuletzt
+> geschrieben wurden) und den Zeitpunkt der letzten Änderung. Nutze es vor einer
+> Korrektur, damit du nur das Falsche änderst und den Rest übernimmst."
+
+**Eingabeschema:**
+```ts
+z.object({ plugin: z.enum(['witz', 'zitat', 'geschichte', 'http', 'nachricht']) })
+```
+
+**Rückgabe:**
+```json
+{ "plugin": "zitat", "fields": { "quote": "…", "author": "Unbekannt" },
+  "rev": "2026-10-01T09:00:12Z" }
+```
+
+**Implementierung:** `GET /api/plugin_settings/{trmnlp_id}/archive` liefert die Seite
+als ZIP. `settings.yml` auslesen, `static_data` parsen → `fields`. Die Revisionsmarke
+aus der ersten Zeile des Markups → `rev`. Das Markup selbst gibt das Tool **nicht**
+zurück: Das Modell soll Inhalte korrigieren, nicht das Layout.
+
+### Ablauf „Inhalt ist falsch“
+
+Auftrag: *„Beim Zitat auf dem Display steht ‚Unbekannt‘ als Autor. Prüf das und
+korrigier es.“*
+
+1. `list_plugins` → die Seite `zitat` ist gemeint
+2. `get_plugin(zitat)` → aktueller Text und Autor
+3. `get_quote_of_the_day` → Original mit Autor
+4. `update_plugin(zitat, …)` mit korrigiertem Autor und unverändertem Zitat
+5. Erscheint, sobald die Seite in der Playlist wieder dran ist
+
+**Grenze:** Playlists selbst sind über die API nicht lesbar. Welche Seite in welcher
+Playlist steckt, wird einmalig in der LaraPaper-Oberfläche festgelegt. Damit der
+Agent sich zurechtfindet, tragen die Seiten eindeutige Namen.
 
 ---
 
 ## `show_message` (Server `trmnl-display`)
 
-Neu umgesetzt über `POST /api/display/update` (Sanctum-Token, `device_id`,
-`markup`). Beschreibung und Schema wie in `03-mcp-tool-spezifikation.md`. Das
-Markup baut das Tool aus einer festen Vorlage. **Das Modell liefert nur den Text,
-kein HTML**, sonst könnte es beliebiges Blade/PHP-Markup einschleusen.
+Beschreibung, Schema und Umsetzung stehen in `03-mcp-tool-spezifikation.md`: eigene
+Seite „Nachricht“, leerer Text blendet sie über `TRMNL_SKIP_DISPLAY` aus.
 
-> ⚠️ Sicherheitsnotiz: `display/update` rendert `markup` als **Blade**. Blade kann
-> PHP ausführen. Freies Markup vom Modell wäre also Code-Ausführung auf dem
-> LaraPaper-Server. Deshalb: nur Text rein, HTML-escapen, feste Vorlage.
+> ⚠️ Sicherheitsnotiz: LaraPaper rendert die Seiten als **Blade**, und Blade kann
+> PHP ausführen. Deshalb liefert das Modell bei allen Display-Tools **nur Text**. Die
+> Vorlagen liegen fest im MCP-Server und geben Text nur über `{{ }}` (escapt) aus.
+> Auch `POST /api/display/update` nutzen wir aus diesem Grund nicht.
 
 ---
 
@@ -161,11 +248,17 @@ Ereignis aus der Geschichte und zum Abschluss ein HTTP-Status mit einem Spruch d
 2. parallel: `get_joke(topic: "coffee", lang: "en")`, `get_quote_of_the_day`, `get_on_this_day`, `get_http_status(418)`
 3. Modell: Ereignis auswählen, Witz und Zitat übersetzen, Spruch zum Statuscode schreiben, alles kürzen
 4. `render_joke_screen` für den Witz, 3 × `update_plugin` für Zitat, Geschichte und HTTP-Status
-5. LaraPaper rotiert bei jedem Geräte-Refresh zum nächsten Plugin der Playlist
+5. LaraPaper rotiert bei jedem Geräte-Refresh zur nächsten Seite der Playlist. Jede
+   Seite wird beim nächsten Mal, wenn sie dran ist, mit dem neuen Inhalt gerendert.
 
 ## Offene Punkte
 
-- [ ] Plugins `witz`, `zitat`, `geschichte`, `http` in LaraPaper anlegen (Webhook, Liquid-Markup) und in die Playlist aufnehmen
+- [ ] Seiten `witz`, `zitat`, `geschichte`, `http`, `nachricht` anlegen: je
+      `POST /api/plugin_settings` → `trmnlp_id` in `.env`, dann ein erster Upload mit
+      der Vorlage. Danach **einmalig in der Oberfläche** in die Playlist aufnehmen.
+      Ein kleines Script `npm run pages:init` spart das Abtippen.
+- [ ] Archiv-Schnittstelle einmal mit `curl` gegen die eigene LaraPaper-Instanz
+      testen (Upload, Export, Revisionsmarke, `TRMNL_SKIP_DISPLAY`)
 - [x] Wie verhält sich JokeAPI mit `contains` + `lang=de`? Getestet am 01.10.2026:
       `contains=kaffee` mit `lang=de` liefert HTTP 400 (`code: 106`, kein Treffer), der
       deutsche Bestand hat nur 29 jugendfreie Witze. Für Themenwitze also `lang=en`
