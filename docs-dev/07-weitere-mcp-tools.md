@@ -83,7 +83,8 @@ Kreativität aus dem Modell.
 - Limit ohne Key: **5 Anfragen pro 30 Sekunden**. Das Tool sollte das Ergebnis
   pro Tag im Speicher cachen.
 - **Quellenangabe ist Pflicht** (Link auf zenquotes.io). Deshalb gibt es das Feld
-  `attribution`, und das Plugin-Layout zeigt es klein im Fuß an.
+  `attribution`. Die Vorlage `zitat.blade.php` zeigt die Quelle fest im Fuß an,
+  deshalb braucht die Seite `zitat` kein eigenes Feld dafür.
 
 ---
 
@@ -136,13 +137,19 @@ const kurz = z.string().max(160)
              fields: z.object({
                quote: kurz.describe('Zitat aus get_quote_of_the_day, bei Bedarf ' +
                  'übersetzt, Sinn erhalten. Max. 160 Zeichen. ' + keineEmojis),
-               author: z.string() }) }),
+               author: z.string().describe('Autor aus get_quote_of_the_day, ' +
+                 'unverändert. Immer angeben') }) }),
   z.object({ page: z.literal('geschichte').describe('Heute vor X Jahren'),
-             fields: z.object({ year: z.number().int(), text: kurz }) }),
+             fields: z.object({
+               year: z.number().int().describe('Jahr des Ereignisses aus get_on_this_day'),
+               text: kurz.describe('Ereignis aus get_on_this_day, bei Bedarf gekürzt. ' +
+                 'Max. 160 Zeichen. ' + keineEmojis) }) }),
   z.object({ page: z.literal('http').describe('HTTP-Status mit Spruch'),
-             fields: z.object({ code: z.number().int(), title: z.string(),
-                                comment: kurz.describe('Eigener Spruch zum Status. ' +
-                                  'Max. 160 Zeichen. ' + keineEmojis) }) })
+             fields: z.object({
+               code: z.number().int().describe('Statuscode aus get_http_status'),
+               title: z.string().describe('Titel aus get_http_status, unverändert'),
+               comment: kurz.describe('Eigener Spruch zum Status. ' +
+                 'Max. 160 Zeichen. ' + keineEmojis) }) })
 ```
 
 `fields` landen ausschließlich in `static_data`, nie im Markup. Anders als bei `witz`
@@ -256,9 +263,10 @@ Ereignis aus der Geschichte und zum Abschluss ein HTTP-Status mit einem Spruch d
       der Vorlage. Danach **einmalig in der Oberfläche** in die Playlist aufnehmen.
       Ein kleines Script `npm run pages:init` spart das Abtippen.
 - [ ] Archiv-Schnittstelle einmal mit `curl` gegen die eigene LaraPaper-Instanz
-      testen (Upload, Export, Revisionsmarke, `TRMNL_SKIP_DISPLAY`)
+      testen (Upload, Export, Revisionsmarke, `TRMNL_SKIP_DISPLAY`, Upload mit
+      unbekannter ID: Fehler oder neue Seite?)
 - [x] Wie verhält sich JokeAPI mit `contains` + `lang=de`? Getestet am 01.10.2026:
       `contains=kaffee` mit `lang=de` liefert HTTP 400 (`code: 106`, kein Treffer), der
-      deutsche Bestand hat nur 29 jugendfreie Witze. Für Themenwitze also `lang=en`
-      plus Übersetzung durch das Modell (siehe `04-prompt-design.md`).
-- [ ] ZenQuotes-Quellenangabe im Plugin-Layout unterbringen
+      deutsche Bestand hat nur 29 (also rund 30) jugendfreie Witze. Für Themenwitze
+      also `lang=en` plus Übersetzung durch das Modell (siehe `04-prompt-design.md`).
+- [ ] ZenQuotes-Quellenangabe fest in `zitat.blade.php` unterbringen

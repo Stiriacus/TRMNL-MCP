@@ -430,7 +430,8 @@ Im Claude-Code-Chat:
 ```text
 Hol einen Programmierwitz und das heutige Datum. Bring den Witz nach den Regeln aus
 docs-dev/04-prompt-design.md auf den Screen (bei Bedarf übersetzen, Setup max. 140,
-Pointe max. 100 Zeichen, keine Emojis). Rendere abschließend den Screen.
+Pointe max. 100 Zeichen, keine Emojis). Stell ihn abschließend auf die Seite
+„Witz des Tages“.
 ```
 
 Danach dasselbe mit Thema: *„… einen Kaffeewitz …“*. Spannend ist, ob der Agent von
@@ -439,7 +440,7 @@ selbst auf `topic: "coffee"` und `lang: "en"` kommt und den Witz übersetzt.
 ### Beobachten und iterieren
 
 - In welcher Reihenfolge ruft der Agent die Tools auf? Wartet er auf beide
-  Datenquellen, bevor er den Screen rendert?
+  Datenquellen, bevor er die Seite schreibt?
 - Hält sich die Übersetzung an die Regeln aus `04-prompt-design.md` (Pointe
   erhalten, Längen, kein erklärtes Wortspiel)? Falls nicht: System-Prompt/Anweisung
   präzisieren, nicht das Layout ändern.
@@ -605,7 +606,7 @@ er wirklich nur den Autor?
 | Upload liefert `302` bzw. eine HTML-Seite statt JSON | Header `Accept: application/json` fehlt. Laravel leitet dann bei Validierungsfehlern weiter, statt den Fehler zu melden |
 | Upload liefert `422` (*file must be a zip*) | Multipart-Feld heißt nicht `file`, oder Dateiname/Typ ist nicht `.zip` / `application/zip` |
 | Upload liefert `500` (mit `APP_DEBUG=true` als *Invalid ZIP structure* lesbar) | `settings.yml` oder `full.blade.php` fehlen im ZIP oder liegen in einem Unterordner (erlaubt sind nur der Wurzelordner und `src/`) |
-| Export liefert `404` | `trmnlp_id` in `.env` falsch, oder die Seite wurde in der Oberfläche angelegt und hat gar keine `trmnlp_id` |
+| Upload erfolgreich, aber in LaraPaper taucht eine zweite Seite auf | Vermutlich `trmnlp_id` in `.env` falsch, oder die Seite wurde in der Oberfläche angelegt und hat gar keine `trmnlp_id`. Der Upload legt dann neu an (noch zu bestätigen, siehe `03`) |
 | Seite heißt nach dem Upload „Imported Plugin“ | `name` fehlt in `settings.yml` |
 | Upload erfolgreich, Display zeigt trotzdem den alten Witz | Entweder ist die Seite in der Playlist noch nicht wieder dran, oder die Revisionsmarke fehlt. Dann hat sich nur `static_data` geändert, und LaraPaper rendert erst nach `refresh_interval` Minuten neu |
 | Display zeigt leere Stellen statt Text | Schlüssel in `static_data` und `$data['…']` in der Vorlage passen nicht zusammen (siehe Konsistenz-Hinweis in `03`) |
@@ -630,7 +631,7 @@ Dieser Abschnitt ist bewusst Teil der Anleitung, nicht optional – laut Lernstr
    Zod? Nennt sie das erwartete Feld? Würde ein Agent sie verstehen und selbst
    korrigieren?
 3. **Tool-Beschreibung verschlechtern:** Die Beschreibung von `update_page` auf
-   ein Wort kürzen ("rendert"). Im selben Auftrag wie in Phase 4 beobachten, ob
+   ein Wort kürzen ("rendert", bewusst mit dem alten, irreführenden Verb). Im selben Auftrag wie in Phase 4 beobachten, ob
    der Agent das Tool noch zuverlässig und zur richtigen Zeit aufruft.
 4. **Timeout simulieren:** In `fetchJoke` das `AbortSignal.timeout(8000)` auf
    `AbortSignal.timeout(1)` setzen. Beobachten, ob der Fehlerpfad tatsächlich

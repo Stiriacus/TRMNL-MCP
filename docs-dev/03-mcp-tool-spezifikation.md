@@ -263,8 +263,9 @@ Warum diese Details zählen:
 | Text länger als der Zielwert am Feld | Wird vor dem Upload an einer Wortgrenze gekürzt (mit "…"), zusätzlich Warnung im Rückgabetext, damit der Agent nachbessern kann |
 | LaraPaper nicht erreichbar (Timeout/Netzwerk) | `isError: true`. Die Seite in LaraPaper bleibt unverändert, das Display zeigt weiter den letzten Inhalt |
 | HTTP 401 | `isError: true`, *„LaraPaper-Token ungültig oder abgelaufen“*. Das Modell kann das nicht beheben, also nicht erneut versuchen |
-| HTTP 404 beim Export, HTTP 422 oder 500 beim Upload | `isError: true` mit Status und Meldung von LaraPaper (z. B. *„Invalid ZIP structure“*). Ein Fehler im Server-Code, kein Fall für das Modell |
+| HTTP 422 oder 500 beim Upload | `isError: true` mit Status und Meldung von LaraPaper (z. B. *„Invalid ZIP structure“*). Ein Fehler im Server-Code, kein Fall für das Modell |
 | `LARAPAPER_PAGE_<PAGE>` fehlt in `.env` | Startfehler des Servers, nicht erst beim Tool-Aufruf |
+| `LARAPAPER_PAGE_<PAGE>` falsch (ID gibt es nicht) | **Noch offen.** Laut Code legt der Upload per `updateOrCreate` an. Vermutlich entsteht dann stillschweigend eine neue Seite außerhalb der Playlist statt eines Fehlers. Mit `curl` prüfen (siehe `07`, Offene Punkte) |
 
 Rendering, PNG-Größe, Graustufen und das Ausliefern ans Gerät übernimmt LaraPaper
 mit dem TRMNL-Framework. Diese Fehlerfälle gibt es in unserem Code nicht mehr.

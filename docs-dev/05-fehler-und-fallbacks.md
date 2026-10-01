@@ -21,7 +21,8 @@ melden, **keine Werte erfinden**.
 | Agent liefert zu langen Witz | Zeichenlimit-Check in `update_page` | Setup auf 140, Pointe auf 100 Zeichen kürzen (an Wortgrenze, mit "…") und Warnung im Tool-Ergebnis zurückgeben, damit der Agent nachbessern kann |
 | LaraPaper beim Upload nicht erreichbar / Timeout | `fetch` in `lib/larapaper.ts` schlägt fehl | `isError: true`. Die Seite in LaraPaper bleibt unverändert, das Display zeigt weiter den letzten Witz. Agent meldet den Fehler und behauptet nicht „fertig“ |
 | Token ungültig (HTTP 401) | Antwort der Archiv-Schnittstelle | `isError: true` mit „Token ungültig oder abgelaufen“. Das Modell kann das nicht beheben und soll nicht erneut versuchen |
-| Upload abgelehnt (HTTP 404, 422, 500) | Antwort der Archiv-Schnittstelle | `isError: true` mit Status und Meldung. Das ist ein Fehler im Server-Code (ZIP-Aufbau, falsche ID), kein Fall für das Modell. Alte Seite bleibt aktiv |
+| Upload abgelehnt (HTTP 422, 500) | Antwort der Archiv-Schnittstelle | `isError: true` mit Status und Meldung. Das ist ein Fehler im Server-Code (ZIP-Aufbau), kein Fall für das Modell. Alte Seite bleibt aktiv |
+| Falsche Seiten-ID in `.env` | Upload „erfolgreich“, Display unverändert, in LaraPaper eine neue Seite | Vermutet, noch nicht getestet: Der Upload legt per `updateOrCreate` eine neue Seite an, die in keiner Playlist steckt. Siehe `03`, Fehlerfälle |
 | Upload erfolgreich, Display zeigt alten Inhalt | Vorschau in LaraPaper neu, Gerät alt | Kein Ausfall: Die Seite ist in der Playlist noch nicht wieder dran. Fehlt die Revisionsmarke, rendert LaraPaper erst nach `refresh_interval` neu (siehe `06`, Abschnitt 7.2) |
 | Rendering in LaraPaper schlägt fehl (Fehler in der Vorlage) | LaraPaper-Log, Fehlerbild auf dem Display | LaraPaper zeigt ein eigenes Fehlerbild mit dem Namen der Seite. Deshalb jede Vorlagenänderung zuerst in der Vorschau prüfen |
 | LaraPaper für das Gerät nicht erreichbar | Gerät bekommt keine Antwort auf `/api/display` | Liegt außerhalb der Software-Kontrolle dieses Projekts; TRMNL-Firmware zeigt in diesem Fall je nach Konfiguration den letzten Screen oder eine Geräte-eigene Fehleranzeige – vor dem Test in der aktuellen TRMNL-Doku nachsehen |
@@ -63,6 +64,6 @@ sichtbar zu machen:
 2. `update_page` mit `page: "witz"` und den Feldern der Seite `zitat` aufrufen →
    beobachten, welche Meldung Zod liefert und ob der Agent den Validierungsfehler
    richtig interpretiert.
-3. Die Tool-Beschreibung von `update_page` auf eine Zeile ohne Kontext kürzen
-   → beobachten, ob der Agent das Tool noch zuverlässig zur richtigen Zeit
-   aufruft.
+3. Die Tool-Beschreibung von `update_page` auf ein einziges Wort kürzen
+   ("rendert") → beobachten, ob der Agent das Tool noch zuverlässig zur richtigen
+   Zeit aufruft.

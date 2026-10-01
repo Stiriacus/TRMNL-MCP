@@ -2,7 +2,7 @@
 
 ## Ziel
 
-Ein Agent holt einen Witz aus der JokeAPI und das aktuelle Datum, wählt den Witz
+Ein Agent holt einen Witz aus der JokeAPI, wählt ihn
 aus, überträgt ihn bei Bedarf ins Deutsche, bringt ihn auf Display-Länge und lädt
 ihn als Seite „Witz des Tages“ nach LaraPaper hoch. LaraPaper rendert daraus den
 Screen (800×480 px), den ein TRMNL E-Ink-Display anzeigt. Datenbeschaffung und
@@ -74,7 +74,7 @@ Details zu Ein-/Ausgabe und Fehlerfällen: siehe `03-mcp-tool-spezifikation.md`.
 
 ## Ablauf (Entwicklungsmodus)
 
-1. Agent ruft `get_joke` und `get_date_info` auf.
+1. Agent ruft `get_joke` auf (bei Bedarf mehrmals).
 2. Agent wählt den Witz aus, überträgt ihn bei Bedarf ins Deutsche und kürzt ihn
    nach den Regeln aus `04-prompt-design.md`.
 3. Agent ruft `update_page` mit `page: "witz"` und dem Witz auf. Das Tool ergänzt
