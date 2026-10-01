@@ -42,21 +42,7 @@ Die Inhalte wurden im September 2026 gegen die dann aktuellen Versionen geprüft
 MCP und das TRMNL-Ökosystem entwickeln sich weiter — vor dem eigentlichen Start lohnt sich
 ein kurzer Blick in die jeweils aktuelle Dokumentation (Links in `docs-dev/anleitung.md`).
 
-## Offene Punkte
+## Festgelegt
 
-Diese Entscheidungen triffst du am besten vor Phase 0 (siehe auch `docs-dev/anleitung.md`,
-Abschnitt "Vor dem Start"):
-
-- Läuft auf deinem Server bereits eine BYOS-Software (z. B. Terminus), oder baust du
-  neu auf Basis der Anleitung auf?
-- Koordinaten (Breite/Länge) für die Wetterabfrage
-- Harness/Modell für den Agenten (Claude Code; pi mit DeepSeek oder Ollama als Vergleich)
-- Rendering-Methode: Headless-Browser (in der Anleitung als Standard gewählt, siehe
-  `docs-dev/05-fehler-und-fallbacks.md`) vs. Bildbibliothek
-- Termine für die gemeinsame Session
-
-## Nächster Schritt
-
-Wenn die Konzeption steht: Code-Gerüst auf Basis von `docs-dev/anleitung.md` und
-`docs-dev/03-mcp-tool-spezifikation.md` aufbauen lassen – dafür einfach im nächsten
-Schritt Bescheid geben.
+- BYOS: Wir nutzen die BYOS-Lösung einer anderen Plattform, keine eigene Neuentwicklung.
+- Koordinaten für die Wetterabfrage: Ingolstadt, Breite 48.7665, Länge 11.4258
