@@ -48,7 +48,7 @@ stecken sie als Code in den Tools. Das Rendern übernimmt LaraPaper. Nur Auswahl
                        │   MCP-Server (Node.js)  │   src/tools/*.ts
                        │  get_joke               │   dünne Wrapper um
                        │  get_date_info          │   src/lib/*.ts
-                       │  render_joke_screen     │
+                       │  update_joke_page     │
                        └───────────┬─────────────┘
                                    │ lädt Seite hoch (ZIP: settings.yml + Blade)
                        ┌───────────▼─────────────┐
@@ -67,9 +67,9 @@ stecken sie als Code in den Tools. Das Rendern übernimmt LaraPaper. Nur Auswahl
 |---|---|
 | `get_joke(category, lang, topic?)` | Liefert einen jugendfreien Witz (Setup und Pointe) |
 | `get_date_info()` | Liefert Datum, Wochentag, ISO-Kalenderwoche |
-| `render_joke_screen(joke, date)` | Überschreibt die Seite „Witz des Tages“ in LaraPaper |
+| `update_joke_page(joke, date)` | Überschreibt die Seite „Witz des Tages“ in LaraPaper |
 | `show_message(text)` *(optional)* | Zeigt eine freie Nachricht an, ohne Witz/Datum |
-| `get_device_status()` *(optional)* | Akku, WLAN-Signal, Firmware-Version des Geräts |
+| `get_device_status()` *(optional)* | Akku, WLAN-Signal, Firmware-Version aller Geräte |
 
 Details zu Ein-/Ausgabe und Fehlerfällen: siehe `03-mcp-tool-spezifikation.md`.
 
@@ -78,7 +78,7 @@ Details zu Ein-/Ausgabe und Fehlerfällen: siehe `03-mcp-tool-spezifikation.md`.
 1. Agent ruft `get_joke` und `get_date_info` auf.
 2. Agent wählt den Witz aus, überträgt ihn bei Bedarf ins Deutsche und kürzt ihn
    nach den Regeln aus `04-prompt-design.md`.
-3. Agent ruft `render_joke_screen` mit den gesammelten Daten auf. Das Tool lädt die
+3. Agent ruft `update_joke_page` mit den gesammelten Daten auf. Das Tool lädt die
    Seite als ZIP nach LaraPaper hoch und überschreibt die vorhandene Seite.
 4. Das Display fragt bei jedem Wake-Cycle `GET /api/display` bei LaraPaper an. Ist
    die Seite in der Playlist an der Reihe, rendert LaraPaper sie neu und liefert das

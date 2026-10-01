@@ -114,7 +114,7 @@ Rendering auf 4 Graustufen.
 
 ## Bezug zur MCP-Tool-Spezifikation
 
-`render_joke_screen` (siehe `03-mcp-tool-spezifikation.md`) bekommt Witz (Setup und
+`update_joke_page` (siehe `03-mcp-tool-spezifikation.md`) bekommt Witz (Setup und
 Pointe) und Datum als strukturierte Daten übergeben. Dieses Layout ist die Grundlage für
 die feste Blade-Vorlage `server/templates/witz.blade.php`. Die Daten landen als
 `static_data` in der Seite, LaraPaper setzt sie beim Rendern ein und erzeugt das

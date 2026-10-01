@@ -122,16 +122,23 @@ inputSchema: z.object({
 
 ## Schritt 4 · Die Beschreibung selbst schreiben
 
-Wir formulieren sie gemeinsam anhand der Fragen von [Seite 6](06-mcp-was-zaehlt.md).
-Was tut es, und was kommt heraus? Woher kommen die Eingaben? Wann soll ich es
-nutzen und wann nicht?
+Wir formulieren sie gemeinsam nach dem Leitgedanken von
+[Seite 6](06-mcp-was-zaehlt.md): *Ändert diese Information, was das Modell tut oder
+sagt?* Was tut das Tool, und was kommt heraus? Wofür ist es da und wofür nicht? Was
+muss das Modell über die Parameter wissen? Wie die JokeAPI intern arbeitet oder wo
+der Witz später erscheint, gehört nicht hinein.
 
 ??? question "Unser Vorschlag zum Vergleich"
-    *„Liefert einen kurzen, jugendfreien Witz aus der Kategorie Programmierung oder
-    gemischt. Mit topic kann nach einem Stichwort gefiltert werden (z. B. ‚coffee‘
-    für Kaffeewitze). Die Stichwortsuche funktioniert praktisch nur mit lang=en, der
-    deutsche Bestand ist klein. Nutze es, wenn ein Screen einen Witz zeigen soll.
-    Erfinde nie selbst einen Witz, sondern rufe das Tool bei Bedarf erneut auf.“*
+    *„Liefert einen kurzen, jugendfreien Witz mit Aufbau und Pointe, wahlweise
+    Programmierwitz oder gemischt. Mit topic kann nach einem Stichwort gefiltert
+    werden (z. B. ‚coffee‘ für Kaffeewitze). Die Stichwortsuche funktioniert praktisch
+    nur mit lang=en, der deutsche Bestand ist klein. Nutze es, wann immer ein Witz
+    gebraucht wird. Erfinde nie selbst einen Witz, sondern rufe das Tool bei Bedarf
+    erneut auf.“*
+
+    Früher stand hier „Nutze es, wenn ein Screen einen Witz zeigen soll“. Das bindet
+    eine Datenquelle an einen Verwendungszweck. Wer einen Witz für den Chat will,
+    findet das Tool damit schlechter.
 
 Dann **sofort ausprobieren**. Den Server in Claude Code oder pi anbinden
 (→ [Seite 4](04-mcp-grundlagen.md#denselben-server-in-zwei-harnesses-anbinden)) und
@@ -156,13 +163,13 @@ Nach demselben Muster gibt es je einen Auftrag pro Tool.
 | Tool | Spezifikation | Worauf beim Prüfen achten |
 |---|---|---|
 | `get_date_info` | [docs-dev/03](../docs-dev/03-mcp-tool-spezifikation.md) | Kalenderwoche richtig (Donnerstagsregel)? Keine Bibliothek? |
-| `render_joke_screen` | docs-dev/02, 03 und [06](../docs-dev/06-recherche-trmnl.md) (Abschnitt 7.7) | Text vom Modell nur in den Daten, **nie im Markup**? Ausgabe mit `{{ }}`? Revisionsmarke bei jedem Aufruf neu? Einzeiler ohne Pointe? |
+| `update_joke_page` | docs-dev/02, 03 und [06](../docs-dev/06-recherche-trmnl.md) (Abschnitt 7.7) | Text vom Modell nur in den Daten, **nie im Markup**? Ausgabe mit `{{ }}`? Revisionsmarke bei jedem Aufruf neu? Einzeiler ohne Pointe? |
 | `get_quote_of_the_day`, `get_on_this_day`, `get_http_status` als **zweiter Server** `tagesinhalte` | [docs-dev/07](../docs-dev/07-weitere-mcp-tools.md) | Rückgabe knapp? Weiche Trennstriche entfernt? |
-| `update_plugin` | docs-dev/07 | Token und Seiten-IDs nur aus `.env`, nie im Schema? Gleicher Upload-Weg wie `render_joke_screen`? |
-| `list_plugins`, `get_plugin` | docs-dev/07 | Gibt `get_plugin` nur Felder zurück, kein Markup? Bleiben fremde Seiten unangetastet? |
+| `update_page` | docs-dev/07 | Token und Seiten-IDs nur aus `.env`, nie im Schema? Gleicher Upload-Weg wie `update_joke_page`? |
+| `list_pages`, `get_page` | docs-dev/07 | Gibt `get_page` nur Felder zurück, kein Markup? Bleiben fremde Seiten unangetastet? |
 
 !!! warning "Vorher in LaraPaper: die Seiten anlegen"
-    `render_joke_screen` und `update_plugin` **überschreiben** Seiten, die es schon
+    `update_joke_page` und `update_page` **überschreiben** Seiten, die es schon
     geben muss. Jede Seite einmal über die API anlegen
     (`POST /api/plugin_settings`), die ID in `server/.env` eintragen und die Seite
     einmalig in der LaraPaper-Oberfläche in die Playlist aufnehmen. Eine
@@ -205,6 +212,6 @@ Danach ist Zeit zum Spielen.
   [Seite 2](02-harness.md#zum-anfassen-eine-api-auswahlen-und-beschreiben)).
 - **Einen Fehler korrigieren lassen** mit *„Beim Zitat steht der falsche Autor.
   Korrigier das, ohne den Rest zu ändern.“* Liest das Modell die Seite erst mit
-  `get_plugin`, bevor es schreibt?
+  `get_page`, bevor es schreibt?
 - **Aufs Display bringen** *(wenn das Gerät verbunden ist)* und die Tagesplaylist
   aus [Seite 8](08-ablauf.md) live befüllen.

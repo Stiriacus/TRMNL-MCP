@@ -5,6 +5,14 @@
 > zur falschen Zeit) aufgerufen wird. Die Beschreibungen unten sind bewusst konkret
 > formuliert und sollten in `server/src/tools/*.ts` wörtlich übernommen werden.
 
+> **Leitgedanke für jede Beschreibung:** *Ändert diese Information, was das Modell tut
+> oder sagt?* Hinein gehören Zweck (in den Worten des Nutzers), Herkunft der
+> Eingaben, Einschränkungen mit kurzem Grund, Wirkung und Abgrenzung zu anderen
+> Tools. Hinaus gehören Hardware (Geräte, Größen, Farbtiefe), Backend (LaraPaper,
+> ZIP, Blade) und Ablauf („als letzten Schritt“). Regeln für ein einzelnes Feld
+> stehen am Feld (`.describe()`), nicht in der Beschreibung. Ausführlich:
+> `docs-guide/06-mcp-was-zaehlt.md`, Regel 1.
+
 Alle Tools nutzen [Zod](https://zod.dev/) für das Eingabeschema, wie es die aktuelle
 `@modelcontextprotocol/server`-API vorsieht (`registerTool(name, config, handler)`).
 
@@ -18,11 +26,11 @@ Welche der 10 Endpunkte wir brauchen und welche Felder übrig bleiben, ist auf
 Seite 2 des Guides hergeleitet (`docs-guide/02-harness.md`, „Zum Anfassen“).
 
 **Beschreibung (für den Agenten):**
-> "Liefert einen kurzen, jugendfreien Witz aus der Kategorie Programmierung oder
-> gemischt. Mit topic kann nach einem Stichwort gefiltert werden (z. B. 'coffee' für
-> Kaffeewitze). Die Stichwortsuche funktioniert praktisch nur mit lang=en, der
-> deutsche Bestand ist klein (rund 30 Witze). Nutze es, wenn ein Screen einen Witz
-> zeigen soll. Erfinde nie selbst einen Witz, sondern rufe das Tool bei Bedarf
+> "Liefert einen kurzen, jugendfreien Witz mit Aufbau und Pointe, wahlweise
+> Programmierwitz oder gemischt. Mit topic kann nach einem Stichwort gefiltert werden
+> (z. B. 'coffee' für Kaffeewitze). Die Stichwortsuche funktioniert praktisch nur mit
+> lang=en, der deutsche Bestand ist klein (rund 30 Witze). Nutze es, wann immer ein
+> Witz gebraucht wird. Erfinde nie selbst einen Witz, sondern rufe das Tool bei Bedarf
 > erneut auf."
 
 **Eingabeschema:**
@@ -72,10 +80,13 @@ z.object({
 ## `get_date_info`
 
 **Beschreibung (für den Agenten):**
-> "Liefert das aktuelle Datum, den Wochentag und die ISO-8601-Kalenderwoche als
-> strukturierte Daten. Verwendet ausschließlich die Systemzeit – erfindet oder
-> schätzt niemals ein Datum. Nutze dieses Tool immer, wenn ein Screen das aktuelle
-> Datum oder die Kalenderwoche anzeigen soll."
+> "Liefert das heutige Datum mit Wochentag und ISO-Kalenderwoche. Nutze es, wann
+> immer das heutige Datum, der Wochentag oder die Kalenderwoche gebraucht wird, statt
+> sie selbst anzunehmen oder zu berechnen."
+
+Dass das Tool die Systemzeit nutzt, steht bewusst nicht in der Beschreibung. Das ist
+Umsetzung. Für das Modell zählt nur: hier kommt das Datum her, nicht aus dem eigenen
+Wissen.
 
 **Eingabeschema:** keines (leeres Objekt `z.object({})`).
 
@@ -100,22 +111,27 @@ verwenden – das ist die zentrale Lernbotschaft dieses Tools.
 
 ---
 
-## `render_joke_screen`
+## `update_joke_page`
 
 **Beschreibung (für den Agenten):**
-> "Bringt den Witz des Tages auf das E-Ink-Display: überschreibt die Seite
-> 'Witz des Tages' in LaraPaper mit neuem Inhalt. Sie erscheint, sobald sie in der
-> Playlist des Geräts wieder an der Reihe ist. Eingaben: joke = ein Witz aus
-> get_joke, bei Bedarf von dir ins Deutsche übersetzt und gekürzt (setup max. 140,
-> punchline max. 100 Zeichen, keine Emojis, Pointe nicht verändern); date = Ergebnis
-> von get_date_info, unverändert übernehmen. Rufe es als letzten Schritt auf. Nur für
-> diesen Screen gedacht: andere Inhalte (Zitat, Geschichte, HTTP-Status) über
-> update_plugin, reinen Text über show_message."
+> "Setzt den Witz auf der Display-Seite 'Witz des Tages' und ersetzt den bisherigen.
+> Gespeichert wird sofort, angezeigt erst, wenn die Seite wieder an der Reihe ist.
+> Nur für diese Seite: Inhalte anderer Seiten über update_page, freien Text über
+> show_message."
 
-> Hinweis: Hieß ursprünglich `render_screen`. Umbenannt, weil der Name ein
-> allgemeines Rendering versprach, das Schema aber fest einen Witz und ein Datum
-> verlangt. Der Name bleibt, obwohl inzwischen LaraPaper das Bild rendert: Für das
-> Modell zählt, *was* das Tool bewirkt (Screen aktualisieren), nicht *wie*.
+Was in die Felder gehört (Herkunft, Längen, keine Emojis, Pointe erhalten), steht
+im Schema am jeweiligen Feld und nicht noch einmal hier. Eine Reihenfolge („als
+letzten Schritt“) nennt die Beschreibung nicht. Sie folgt daraus, dass Witz und
+Datum aus `get_joke` und `get_date_info` stammen.
+
+> Hinweis: Hieß ursprünglich `render_screen`, dann `render_joke_screen`. Die erste
+> Umbenennung, weil der Name ein allgemeines Rendering versprach, das Schema aber fest
+> einen Witz und ein Datum verlangt. Die zweite, weil „render“ und „screen“ sagen,
+> *wie* und *worauf* etwas erscheint. Das Tool rendert nichts (das macht LaraPaper),
+> und auf welchem Gerät die Seite landet, weiß es nicht. Es setzt den Inhalt einer
+> Seite, und genau das sagt `update_joke_page`. Aus demselben Grund heißen
+> `update_plugin`, `list_plugins` und `get_plugin` jetzt `update_page`, `list_pages`
+> und `get_page`: „Plugin“ ist LaraPaper-Vokabular, der Nutzer spricht von Seiten.
 
 **Eingabeschema:**
 
@@ -123,15 +139,18 @@ verwenden – das ist die zentrale Lernbotschaft dieses Tools.
 z.object({
   joke: z.object({
     setup: z.string().min(1).max(200)
-      .describe('Aufbau des Witzes bzw. der ganze Witz bei Einzeilern, max. ca. 140 Zeichen'),
+      .describe('Aufbau bzw. ganzer Einzeiler aus get_joke, auf Deutsch, max. ca. 140 ' +
+                'Zeichen. Übersetzen und kürzen erlaubt. Keine Emojis, die Anzeige ' +
+                'kann sie nicht darstellen'),
     punchline: z.string().max(120)
-      .describe('Pointe, max. ca. 100 Zeichen; leer bei Einzeilern')
+      .describe('Pointe aus get_joke, max. ca. 100 Zeichen, leer bei Einzeilern. Beim ' +
+                'Übersetzen die Pointe erhalten, nicht erklären. Keine Emojis')
   }),
   date: z.object({
     formatted: z.string().describe('z. B. "30 / 09 / 2026"'),
     weekday: z.string(),
     isoWeek: z.number().int().min(1).max(53)
-  })
+  }).describe('Rückgabe von get_date_info, unverändert übernehmen')
 })
 ```
 
@@ -143,7 +162,7 @@ Fehlerfälle). So bricht der Lauf nicht an ein paar Zeichen zu viel ab.
 
 ```json
 {
-  "plugin": "witz",
+  "page": "witz",
   "status": "updated",
   "rev": "2026-10-01T09:00:12Z",
   "hint": "Erscheint, sobald die Seite in der Playlist an der Reihe ist."
@@ -210,22 +229,24 @@ mit dem TRMNL-Framework. Diese Fehlerfälle gibt es in unserem Code nicht mehr.
 ## `show_message` (optional)
 
 **Beschreibung (für den Agenten):**
-> "Zeigt einen frei wählbaren Text ohne Witz- oder Datumsbezug großflächig auf dem
-> Display an. Ein leerer Text blendet die Nachricht wieder aus. Nutze dieses Tool nur,
-> wenn explizit eine reine Textnachricht gewünscht ist – für den Witz des Tages ist
-> render_joke_screen zuständig."
+> "Zeigt eine kurze, frei formulierte Nachricht als eigene Display-Seite, z. B.
+> einen Hinweis an alle. Ein leerer Text blendet die Nachricht wieder aus. Gespeichert
+> wird sofort, angezeigt erst, wenn die Seite wieder an der Reihe ist. Nur nutzen,
+> wenn ausdrücklich eine freie Nachricht gewünscht ist: für den Witz des Tages ist
+> update_joke_page zuständig, für andere vorbereitete Seiten update_page."
 
 **Eingabeschema:**
 
 ```ts
 z.object({
-  text: z.string().max(200).describe('Leerer Text = Nachricht ausblenden')
+  text: z.string().max(200)
+    .describe('Kurze Nachricht, max. 200 Zeichen, keine Emojis. Leerer Text = Nachricht ausblenden')
 })
 ```
 
-**Rückgabe:** wie `render_joke_screen`, mit `"plugin": "nachricht"`.
+**Rückgabe:** wie `update_joke_page`, mit `"page": "nachricht"`.
 
-**Implementierung:** Gleicher Weg wie `render_joke_screen`, eigene Seite „Nachricht“
+**Implementierung:** Gleicher Weg wie `update_joke_page`, eigene Seite „Nachricht“
 mit Vorlage `server/templates/nachricht.blade.php` (Schriftgröße 48 px, zentriert,
 ganzer Screen). Bei leerem Text schreibt das Tool
 `static_data: {"TRMNL_SKIP_DISPLAY": true}`. LaraPaper überspringt die Seite dann
@@ -240,9 +261,13 @@ in der Playlist, sie kann also dauerhaft in der Playlist bleiben.
 ## `get_device_status` (optional)
 
 **Beschreibung (für den Agenten):**
-> "Liefert den zuletzt vom TRMNL-Gerät gemeldeten Status: Akkuspannung, WLAN-Signal
-> (RSSI), Firmware-Version und Zeitpunkt der letzten Abfrage. Nutze dieses Tool, um
-> zu prüfen, ob das Gerät erreichbar ist oder der Akku bald geladen werden muss."
+> "Liefert für jedes Display-Gerät den zuletzt gemeldeten Zustand: Name, Akkuspannung,
+> WLAN-Signal (RSSI), Firmware-Version und Zeitpunkt der letzten Meldung. Nutze es,
+> um zu prüfen, ob ein Gerät erreichbar ist oder bald geladen werden muss."
+
+Hier sind die Geräte selbst der Zweck des Tools, deshalb kommen sie in der
+Beschreibung vor. Es sind mehrere, also liefert das Tool eine Liste, auch wenn nur
+ein Gerät eingerichtet ist.
 
 **Eingabeschema:** keines.
 
@@ -250,10 +275,15 @@ in der Playlist, sie kann also dauerhaft in der Playlist bleiben.
 
 ```json
 {
-  "batteryVoltage": 4.01,
-  "rssi": -54,
-  "firmwareVersion": "1.8.16",
-  "lastSeenAt": "2026-09-30T08:31:00Z"
+  "devices": [
+    {
+      "name": "Flur",
+      "batteryVoltage": 4.01,
+      "rssi": -54,
+      "firmwareVersion": "1.8.16",
+      "lastSeenAt": "2026-09-30T08:31:00Z"
+    }
+  ]
 }
 ```
 
@@ -261,8 +291,8 @@ in der Playlist, sie kann also dauerhaft in der Playlist bleiben.
 Feldnamen der LaraPaper-Antwort beim ersten Test abgleichen und auf die Struktur oben
 abbilden.
 
-**Fehlerfälle:** Hat sich das Gerät noch nie gemeldet, liefert das Tool `null`-Werte
-statt eines Fehlers. Das ist direkt nach dem Einrichten ein normaler Zustand, kein
+**Fehlerfälle:** Hat sich ein Gerät noch nie gemeldet, liefert das Tool für dieses
+Gerät `null`-Werte statt eines Fehlers. Das ist direkt nach dem Einrichten ein normaler Zustand, kein
 Ausfall.
 
 ---
@@ -275,6 +305,6 @@ Schlüssel in `static_data` 1:1 mit den `$data['…']`-Zugriffen in `server/temp
 Ein falscher Schlüssel fällt nicht als Fehler auf, sondern als **leere Stelle auf dem
 Display**. Wenn du
 während der Session ein Feld umbenennst, hier und im Code gleichzeitig anpassen –
-sonst bricht `render_joke_screen` mit einem für den Agenten schwer verständlichen
+sonst bricht `update_joke_page` mit einem für den Agenten schwer verständlichen
 Validierungsfehler ab (guter Kandidat für den Abschnitt "Bewusst kaputt machen" in
 `anleitung.md`).

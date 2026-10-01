@@ -161,11 +161,12 @@ Sie soll dem Agenten den Witz des Tages fürs Display liefern und hat **10 Endpu
 
 ??? question "Wie sieht das fertige Tool aus?"
     - Der **Name** ist `get_joke`.
-    - Die **Beschreibung** lautet *„Liefert einen kurzen, jugendfreien Witz aus der
-      Kategorie Programmierung oder gemischt. Mit `topic` kann nach einem Stichwort
-      gefiltert werden (z. B. ‚coffee‘ für Kaffeewitze). Die Stichwortsuche
-      funktioniert praktisch nur mit `lang=en`, der deutsche Bestand ist klein. Nutze
-      es, wenn ein Screen einen Witz zeigen soll. Erfinde nie selbst einen Witz.“*
+    - Die **Beschreibung** lautet *„Liefert einen kurzen, jugendfreien Witz mit
+      Aufbau und Pointe, wahlweise Programmierwitz oder gemischt. Mit `topic` kann
+      nach einem Stichwort gefiltert werden (z. B. ‚coffee‘ für Kaffeewitze). Die
+      Stichwortsuche funktioniert praktisch nur mit `lang=en`, der deutsche Bestand
+      ist klein. Nutze es, wann immer ein Witz gebraucht wird. Erfinde nie selbst
+      einen Witz.“*
     - Die **Parameter** sind `category` (`Programming` oder `Any`), `lang` (`de` oder
       `en`) und optional `topic`.
     - Die **Rückgabe** ist immer gleich, egal ob `single` oder `twopart`, nämlich

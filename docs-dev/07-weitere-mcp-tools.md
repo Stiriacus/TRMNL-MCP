@@ -10,7 +10,7 @@ Alle APIs wurden am 30.09.2026 live getestet und funktionieren ohne API-Key.
 
 | Server | Tools | Zweck |
 |---|---|---|
-| `trmnl-display` (bestehend) | `get_joke`, `get_date_info`, `render_joke_screen`, **neu:** `update_plugin`, `list_plugins`, `get_plugin`, `show_message` | Witz des Tages und alles rund ums Display |
+| `trmnl-display` (bestehend) | `get_joke`, `get_date_info`, `update_joke_page`, **neu:** `update_page`, `list_pages`, `get_page`, `show_message` | Witz des Tages und alles rund ums Display |
 | `tagesinhalte` (neu) | `get_http_status`, `get_quote_of_the_day`, `get_on_this_day` | Reine Datenquellen, wissen nichts vom Display |
 
 `get_joke` ist das Haupttool des Projekts und in `03-mcp-tool-spezifikation.md`
@@ -33,9 +33,9 @@ server/templates/
 ```
 
 Alle Display-Tools laufen über **eine** Funktion in `lib/larapaper.ts`, die eine
-Seite komplett hochlädt: `pushPage(plugin, data)`. Sie lädt die Vorlage, setzt die
+Seite komplett hochlädt: `pushPage(page, data)`. Sie lädt die Vorlage, setzt die
 Revisionsmarke, baut `settings.yml`, packt das ZIP und schickt es an die
-Archiv-Schnittstelle (Details: `03-mcp-tool-spezifikation.md`, `render_joke_screen`,
+Archiv-Schnittstelle (Details: `03-mcp-tool-spezifikation.md`, `update_joke_page`,
 und `06-recherche-trmnl.md`, Abschnitt 7.7).
 
 ---
@@ -46,9 +46,12 @@ und `06-recherche-trmnl.md`, Abschnitt 7.7).
 
 **Beschreibung (für den Agenten):**
 > "Liefert Titel und Bild-URL zu einem HTTP-Statuscode (z. B. 418 → 'I'm a teapot').
-> Gedacht für humorvolle Nerd-Inhalte: Schreibe selbst einen kurzen Witz oder
-> Kommentar zum Status. Das Bild ist ein Foto und eignet sich nur mit Dithering
-> für E-Ink."
+> Gedacht für humorvolle Nerd-Inhalte. Einen Witz oder Kommentar zum Status liefert
+> es nicht, den schreibst du bei Bedarf selbst."
+
+Der frühere Satz zum Bild („Foto, eignet sich nur mit Dithering für E-Ink“) ist
+gestrichen. Der Server `tagesinhalte` weiß nichts vom Display, und ob das Bild
+gezeigt werden kann, entscheidet die Vorlage der Seite, nicht das Modell.
 
 **Eingabeschema:** `z.object({ code: z.number().int().min(100).max(599) })`
 
@@ -68,9 +71,9 @@ Kreativität aus dem Modell.
 **API:** [ZenQuotes](https://zenquotes.io): `https://zenquotes.io/api/today`
 
 **Beschreibung (für den Agenten):**
-> "Liefert das Zitat des Tages (englisch) mit Autor. Wechselt täglich um 00:00 UTC.
-> Übersetze bei Bedarf ins Deutsche, nenne aber immer den Autor und verändere den
-> Sinn nicht."
+> "Liefert das Zitat des Tages (englisch) mit Autor. Es wechselt täglich um 00:00 UTC,
+> mehrfaches Abrufen am selben Tag liefert dasselbe Zitat. Beim Übersetzen den Sinn
+> erhalten und den Autor immer nennen."
 
 **Eingabeschema:** keines.
 
@@ -91,9 +94,9 @@ Kreativität aus dem Modell.
 (`User-Agent`-Header setzen, das ist Wikimedia-Richtlinie)
 
 **Beschreibung (für den Agenten):**
-> "Liefert historische Ereignisse, die an einem Kalendertag stattfanden (Quelle:
-> deutsche Wikipedia). Nutze es für 'Heute vor X Jahren'-Inhalte. Wähle für ein
-> Display ein allgemein interessantes, nicht belastendes Ereignis."
+> "Liefert ausgewählte historische Ereignisse zu einem Kalendertag, mit Jahr und
+> Kurztext (Quelle: deutsche Wikipedia). Nutze es für 'Heute vor X Jahren'-Inhalte.
+> Die Auswahl enthält oft auch Kriege und Katastrophen, wähle passend zum Zweck."
 
 **Eingabeschema:**
 ```ts
@@ -110,33 +113,42 @@ z.object({
 Trennstriche** (`U+00AD`, z. B. „Welt­reise“). Im Browser unsichtbar, auf E-Ink
 unter Umständen als Kästchen oder Lücke. → Im Tool entfernen:
 `text.replaceAll('­', '')`. Zusätzlich enthält `selected` oft Kriege oder
-Katastrophen. Die Auswahl überlassen wir bewusst dem Modell (siehe Beschreibung).
+Katastrophen. Die Auswahl überlassen wir bewusst dem Modell. Die Beschreibung sagt
+nur, *was* in der Liste steckt. *Was passt*, hängt vom Einsatz ab (Flur-Bildschirm,
+Geschichtsunterricht) und steht deshalb im Auftrag oder Systemprompt, nicht im Tool.
 
 ---
 
-## `update_plugin` (Server `trmnl-display`)
+## `update_page` (Server `trmnl-display`)
 
 Überschreibt eine der vorbereiteten Seiten in LaraPaper (static-Recipe, siehe
 `06-recherche-trmnl.md`, Abschnitt 7.7).
 
 **Beschreibung (für den Agenten):**
-> "Schreibt Inhalte in eine der vorbereiteten Display-Seiten (zitat, geschichte,
-> http) und ersetzt dabei den bisherigen Inhalt. Das Layout ist festgelegt – übergib
-> nur die Felder, die die jeweilige Seite erwartet. Texte vorher auf Display-Länge
-> kürzen (max. 160 Zeichen pro Feld), keine Emojis. Die Seite erscheint, sobald sie in
-> der Playlist wieder an der Reihe ist. Für den Witz des Tages ist render_joke_screen
-> zuständig."
+> "Ersetzt den Inhalt einer vorbereiteten Display-Seite. Welche Seiten es gibt und
+> welche Felder sie erwarten, steht im Schema. Das Layout ist fest, du lieferst nur
+> Text. Gespeichert wird sofort, angezeigt erst, wenn die Seite wieder an der Reihe
+> ist. Für den Witz des Tages ist update_joke_page zuständig, für freien Text
+> show_message."
+
+Die Seiten zählt die Beschreibung nicht mehr auf, das Schema tut es schon. So muss
+bei einer neuen Seite nur das Schema wachsen. Längen und „keine Emojis“ stehen an
+den Feldern.
 
 **Eingabeschema:**
 ```ts
-z.discriminatedUnion('plugin', [
-  z.object({ plugin: z.literal('zitat'),
-             fields: z.object({ quote: z.string().max(160), author: z.string() }) }),
-  z.object({ plugin: z.literal('geschichte'),
-             fields: z.object({ year: z.number().int(), text: z.string().max(160) }) }),
-  z.object({ plugin: z.literal('http'),
+const kurz = z.string().max(160)
+  .describe('max. 160 Zeichen, keine Emojis, die Anzeige kann sie nicht darstellen');
+
+z.discriminatedUnion('page', [
+  z.object({ page: z.literal('zitat').describe('Zitat des Tages'),
+             fields: z.object({ quote: kurz, author: z.string() }) }),
+  z.object({ page: z.literal('geschichte').describe('Heute vor X Jahren'),
+             fields: z.object({ year: z.number().int(), text: kurz }) }),
+  z.object({ page: z.literal('http').describe('HTTP-Status mit Spruch'),
              fields: z.object({ code: z.number().int(), title: z.string(),
-                                comment: z.string().max(160) }) })
+                                comment: kurz.describe('Eigener Spruch zum Status, ' +
+                                  'max. 160 Zeichen, keine Emojis') }) })
 ])
 ```
 
@@ -144,37 +156,38 @@ z.discriminatedUnion('plugin', [
 welcher Seite gehören. Ein generisches `fields: z.record(z.any())` wäre bequemer,
 würde aber falsche Feldnamen erst im Display sichtbar machen (leere Platzhalter).
 
-**Implementierung:** `pushPage(plugin, fields)`. Die Zuordnung Seite → `trmnlp_id`
+**Implementierung:** `pushPage(page, fields)`. Die Zuordnung Seite → `trmnlp_id`
 steht in `.env` (`LARAPAPER_PAGE_ZITAT=…`), die Vorlage in
-`server/templates/{plugin}.blade.php`. `fields` landen ausschließlich in
+`server/templates/{page}.blade.php`. `fields` landen ausschließlich in
 `static_data`, nie im Markup.
 
-**Rückgabe:** `{ "plugin": "zitat", "status": "updated", "rev": "…", "hint": "…" }`
+**Rückgabe:** `{ "page": "zitat", "status": "updated", "rev": "…", "hint": "…" }`
 
 ---
 
-## Inhalte prüfen und korrigieren: `list_plugins` und `get_plugin`
+## Inhalte prüfen und korrigieren: `list_pages` und `get_page`
 
 Wenn auf dem Display etwas Falsches steht, soll der Agent die betroffene Seite
 finden, ihren aktuellen Inhalt lesen und gezielt korrigieren können. Ohne
 Lese-Tools könnte er nur blind neu schreiben.
 
-### `list_plugins`
+### `list_pages`
 
 **Beschreibung (für den Agenten):**
-> "Listet die Display-Seiten auf, die du bearbeiten kannst, mit Anzeigename und
-> letzter Änderung. Nutze es, wenn der Nutzer einen Fehler auf dem Display meldet und
-> unklar ist, welche Seite betroffen ist."
+> "Listet die Display-Seiten auf, die du bearbeiten kannst, mit Kennung und
+> Anzeigename, dazu fremde Seiten, die nur angezeigt werden. Nutze es, um
+> herauszufinden, welche Seite der Nutzer meint, z. B. wenn er einen Fehler auf dem
+> Display meldet."
 
 **Eingabeschema:** keines.
 
 **Rückgabe:**
 ```json
 {
-  "plugins": [
-    { "plugin": "witz",       "name": "Witz des Tages",    "found": true },
-    { "plugin": "zitat",      "name": "Zitat des Tages",   "found": true },
-    { "plugin": "geschichte", "name": "Heute vor …",       "found": false }
+  "pages": [
+    { "page": "witz",       "name": "Witz des Tages",    "found": true },
+    { "page": "zitat",      "name": "Zitat des Tages",   "found": true },
+    { "page": "geschichte", "name": "Heute vor …",       "found": false }
   ],
   "other": ["Kalender", "Wetter (Recipe)"]
 }
@@ -187,21 +200,21 @@ stimmt nicht. `other` zeigt fremde Seiten nur mit Namen, **bearbeiten lassen sie
 nicht**: Sie sind nicht in der Zuordnung, und ein Upload würde sie komplett
 überschreiben.
 
-### `get_plugin`
+### `get_page`
 
 **Beschreibung (für den Agenten):**
-> "Liefert den aktuellen Inhalt einer Display-Seite (die Felder, wie sie zuletzt
-> geschrieben wurden) und den Zeitpunkt der letzten Änderung. Nutze es vor einer
-> Korrektur, damit du nur das Falsche änderst und den Rest übernimmst."
+> "Liefert den aktuellen Inhalt einer Display-Seite: die Felder, wie sie zuletzt
+> geschrieben wurden, und den Zeitpunkt der Änderung, nicht das Layout. Dient dazu,
+> bei einer Korrektur nur das Falsche zu ändern und den Rest zu übernehmen."
 
 **Eingabeschema:**
 ```ts
-z.object({ plugin: z.enum(['witz', 'zitat', 'geschichte', 'http', 'nachricht']) })
+z.object({ page: z.enum(['witz', 'zitat', 'geschichte', 'http', 'nachricht']) })
 ```
 
 **Rückgabe:**
 ```json
-{ "plugin": "zitat", "fields": { "quote": "…", "author": "Unbekannt" },
+{ "page": "zitat", "fields": { "quote": "…", "author": "Unbekannt" },
   "rev": "2026-10-01T09:00:12Z" }
 ```
 
@@ -215,10 +228,10 @@ zurück: Das Modell soll Inhalte korrigieren, nicht das Layout.
 Auftrag: *„Beim Zitat auf dem Display steht ‚Unbekannt‘ als Autor. Prüf das und
 korrigier es.“*
 
-1. `list_plugins` → die Seite `zitat` ist gemeint
-2. `get_plugin(zitat)` → aktueller Text und Autor
+1. `list_pages` → die Seite `zitat` ist gemeint
+2. `get_page(zitat)` → aktueller Text und Autor
 3. `get_quote_of_the_day` → Original mit Autor
-4. `update_plugin(zitat, …)` mit korrigiertem Autor und unverändertem Zitat
+4. `update_page(zitat, …)` mit korrigiertem Autor und unverändertem Zitat
 5. Erscheint, sobald die Seite in der Playlist wieder dran ist
 
 **Grenze:** Playlists selbst sind über die API nicht lesbar. Welche Seite in welcher
@@ -247,7 +260,7 @@ Ereignis aus der Geschichte und zum Abschluss ein HTTP-Status mit einem Spruch d
 1. `get_date_info` → Datum für `get_on_this_day` und den Witz-Screen
 2. parallel: `get_joke(topic: "coffee", lang: "en")`, `get_quote_of_the_day`, `get_on_this_day`, `get_http_status(418)`
 3. Modell: Ereignis auswählen, Witz und Zitat übersetzen, Spruch zum Statuscode schreiben, alles kürzen
-4. `render_joke_screen` für den Witz, 3 × `update_plugin` für Zitat, Geschichte und HTTP-Status
+4. `update_joke_page` für den Witz, 3 × `update_page` für Zitat, Geschichte und HTTP-Status
 5. LaraPaper rotiert bei jedem Geräte-Refresh zur nächsten Seite der Playlist. Jede
    Seite wird beim nächsten Mal, wenn sie dran ist, mit dem neuen Inhalt gerendert.
 

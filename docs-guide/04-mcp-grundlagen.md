@@ -82,7 +82,7 @@ Anbieter.
 
 | Baustein | Wer steuert ihn? | Beispiel |
 |---|---|---|
-| **Tools** | das **Modell** entscheidet, wann sie aufgerufen werden | `get_joke`, `render_joke_screen` |
+| **Tools** | das **Modell** entscheidet, wann sie aufgerufen werden | `get_joke`, `update_joke_page` |
 | **Resources** | die **Anwendung** entscheidet, was in den Kontext kommt | z. B. aktueller Screen als Bild, Layout-Spezifikation |
 | **Prompts** | der **Mensch** wählt sie aus (oft als Slash-Befehl) | z. B. `/witz` |
 

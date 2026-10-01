@@ -10,15 +10,44 @@ Es folgen sechs Regeln, jede am Beispiel unserer Tools.
 
 ## 1. Die Beschreibung ist die Bedienungsanleitung
 
-Das Modell wählt Tools **nur anhand ihrer Beschreibung** aus. Hier sind drei
-Varianten für dasselbe Tool.
+Das Modell wählt Tools **nur anhand ihrer Beschreibung** aus. Eine Beschreibung
+sagt, **was** das Tool tut und **wofür** es da ist. Sie sagt nicht, **worauf** es
+läuft und **wann** es an der Reihe ist.
+
+!!! tip "Leitgedanke: Ändert diese Information, was das Modell tut oder sagt?"
+    Jeder Satz in Beschreibung und Schema muss diesen Test bestehen.
+
+    **Hinein gehört**
+
+    - der **Zweck in den Worten des Nutzers** („Display“, „Witz des Tages“). Darüber
+      *findet* das Modell das Tool, wenn jemand sagt „bring einen Witz aufs Display“.
+    - die **Herkunft der Eingaben** („aus get_joke“). Das sagt, woher die Daten kommen,
+      nicht, wann das Tool dran ist.
+    - **Einschränkungen**, gern mit kurzem Grund („keine Emojis, die Anzeige kann sie
+      nicht darstellen“). Mit Grund verallgemeinert das Modell, ohne Grund befolgt es
+      wörtlich. Was ein einzelnes Feld betrifft, steht am Feld im Schema.
+    - die **Wirkung** („sofort gespeichert, angezeigt erst, wenn die Seite wieder dran
+      ist“). Sonst verspricht das Modell dem Nutzer etwas Falsches.
+    - die **Abgrenzung**: wofür das Tool *nicht* da ist, und welches stattdessen.
+
+    **Hinaus gehört**
+
+    - **Hardware**: Größe, Auflösung, Farbtiefe, Anzahl der Geräte. Das Modell liefert
+      Text, wo und wie er erscheint, regelt die Schicht dahinter.
+    - **Backend**: LaraPaper, ZIP, Blade, Token. Das ist das *Wie*, nicht das *Was*.
+    - **Ablauf**: „Rufe es als letzten Schritt auf.“ Ein Tool ist ein Baustein, kein
+      Schritt in einem festen Ablauf. Die Reihenfolge ergibt sich aus der Herkunft der
+      Daten, und wo sie wirklich festgelegt werden muss, gehört sie in den Auftrag, den
+      Systemprompt oder einen MCP-Prompt.
+
+Hier sind vier Varianten für dasselbe Tool.
 
 === "Zu knapp"
     ```ts
     description: 'Rendert den Screen.'
     ```
-    Für das Modell bleibt alles offen. Welchen Screen? Mit welchen Daten? Wann? Muss
-    vorher etwas anderes aufgerufen werden?
+    Für das Modell bleibt alles offen. Welcher Screen? Mit welchen Daten? Woher kommen
+    sie? Wofür ist das Tool *nicht* da?
 
 === "Klingt gut, sagt nichts"
     ```ts
@@ -29,7 +58,7 @@ Varianten für dasselbe Tool.
     Ende heraus? Diese Art Beschreibung ist die **häufigste**, weil sie beim Schreiben
     vollständig *wirkt*.
 
-=== "Gut (unser render_joke_screen)"
+=== "Erzählt zu viel"
     ```ts
     description:
       'Bringt den Witz des Tages auf das E-Ink-Display: überschreibt die Seite ' +
@@ -39,17 +68,50 @@ Varianten für dasselbe Tool.
       'gekürzt (setup max. 140, punchline max. 100 Zeichen, keine Emojis, Pointe ' +
       'nicht verändern); date = Ergebnis von get_date_info, unverändert übernehmen. ' +
       'Rufe es als letzten Schritt auf. Nur für diesen Screen gedacht: ' +
-      'andere Inhalte (Zitat, Geschichte, HTTP-Status) über update_plugin, ' +
+      'andere Inhalte (Zitat, Geschichte, HTTP-Status) über update_page, ' +
       'reinen Text über show_message.'
     ```
-    Jede Frage ist **beantwortet**. Die Beschreibung sagt, **was** passiert und
-    **wann** man es sieht (Seite wird ersetzt, erscheint mit der Playlist), **woher** jede Eingabe kommt (zwei Tools, beim Witz
-    zusätzlich das Modell selbst), **wann** es drankommt und **wann nicht**, samt
-    Verweis auf das richtige Tool.
+    So stand es bei uns lange da, und es wirkt gründlich. Am Leitgedanken gemessen
+    fällt aber vieles durch. **E-Ink** und **LaraPaper** sind Umsetzung, das Modell
+    tut ohne sie nichts anders. **„Als letzten Schritt“** ist schlicht falsch, sobald
+    der Auftrag lautet „nach dem Witz noch das Zitat“. Die Liste **„Zitat, Geschichte,
+    HTTP-Status“** veraltet mit jeder neuen Seite. Und die Feldregeln stehen doppelt,
+    hier und im Schema, und laufen irgendwann auseinander.
 
-!!! tip "Die vier Fragen einer guten Beschreibung"
-    **Was** tut es, und was kommt heraus? **Woher** kommen die Eingaben? **Wann** soll ich es
-    nutzen und **wann nicht**? Was muss vorher passiert sein?
+=== "Gut (unser update_joke_page)"
+    ```ts
+    description:
+      'Setzt den Witz auf der Display-Seite "Witz des Tages" und ersetzt den ' +
+      'bisherigen. Gespeichert wird sofort, angezeigt erst, wenn die Seite wieder ' +
+      'an der Reihe ist. Nur für diese Seite: Inhalte anderer Seiten über ' +
+      'update_page, freien Text über show_message.',
+    inputSchema: z.object({
+      joke: z.object({
+        setup: z.string().min(1).max(200).describe(
+          'Aufbau bzw. ganzer Einzeiler aus get_joke, auf Deutsch, max. ca. 140 ' +
+          'Zeichen. Übersetzen und kürzen erlaubt. Keine Emojis, die Anzeige kann ' +
+          'sie nicht darstellen'),
+        punchline: z.string().max(120).describe(
+          'Pointe aus get_joke, max. ca. 100 Zeichen, leer bei Einzeilern. ' +
+          'Beim Übersetzen die Pointe erhalten, nicht erklären. Keine Emojis')
+      }),
+      date: z.object({ /* … */ })
+        .describe('Rückgabe von get_date_info, unverändert übernehmen')
+    })
+    ```
+    Die Beschreibung sagt, **was** das Tool bewirkt (Witz gesetzt, alter ersetzt,
+    Anzeige verzögert) und **wofür nicht**. Was jedes Feld enthalten muss und
+    **woher** es kommt, steht am Feld. Kein Wort über Geräte, Backend oder
+    Reihenfolge. Dass `update_joke_page` nach `get_joke` kommt, folgt daraus, dass
+    der Witz *aus* `get_joke` stammt.
+
+!!! note "Wenn die Hardware doch durchschlägt"
+    „Max. 140 Zeichen, keine Emojis“ hat seinen Grund in der Anzeige. Die Hardware
+    erreicht das Modell also doch, aber als **Einschränkung**, nicht als Wissen über
+    Geräte. Zeigen Geräte unterschiedlicher Größe dieselbe Seite, muss die Vorlage mit
+    dieser Länge überall zurechtkommen. Das Modell soll nicht pro Gerät denken. Passt
+    es nicht, ist das ein Architekturproblem, und eine längere Beschreibung löst es
+    nicht.
 
 ## 2. Schemas sind Leitplanken
 
@@ -128,13 +190,14 @@ Dieselbe `lib/`-Funktion lässt sich aus einem MCP-Tool, einem normalen Skript o
 einem Unit-Test aufrufen. Im Projekt hat sich das schon ausgezahlt. Geplant war
 zuerst, das Bild selbst zu rendern (Headless-Browser, PNG). Dann zeigte sich, dass
 LaraPaper fertige Seiten annimmt und selbst rendert. Getauscht wurde nur `lib/`
-(`render.ts` → `larapaper.ts`). Name und Schema von `render_joke_screen`, also der
-**Vertrag zum Modell**, sind gleich geblieben. In der Beschreibung hat sich nur ein
-Satz geändert: wann das Ergebnis auf dem Display zu sehen ist.
+(`render.ts` → `larapaper.ts`). Das Schema des Witz-Tools, also der **Vertrag zum
+Modell**, ist gleich geblieben. In der Beschreibung hat sich nur ein Satz geändert:
+wann das Ergebnis zu sehen ist. Das ist die Wirkung, nicht die
+Technik, und deshalb steht der Satz überhaupt dort (Regel 1).
 
 ## 6. Wenige, klar geschnittene Tools
 
-- Lieber `get_joke`, `get_date_info` und `render_joke_screen` als ein
+- Lieber `get_joke`, `get_date_info` und `update_joke_page` als ein
   `do_everything(config)`. Kleine Tools kann das Modell **flexibel kombinieren**.
 - Aber auch nicht **40 Tools** für jede API-Route. Jedes Tool kostet Kontext und
   erschwert die Auswahl.
@@ -142,13 +205,16 @@ Satz geändert: wann das Ergebnis auf dem Display zu sehen ist.
   nächsten Schritt braucht.
 - **Der Name muss halten, was das Tool kann.** Aus `render_screen` wurde
   `render_joke_screen`, als klar war, dass es nur *einen* Screen kann (siehe
-  Regel 2). Für alles andere gibt es `update_plugin`, bei dem jedes Plugin (jede
-  Seite in LaraPaper) ein festes Layout und ein eigenes Schema hat. Neuer Inhalt heißt
-  dann **neue Seite**, nicht neues Tool und schon gar nicht ein Universal-Tool, in das
-  das Modell freies Layout kippt.
+  Regel 2). Später wurde daraus `update_joke_page`, denn „render“ und „screen“ sagen,
+  *wie* und *worauf* etwas erscheint, nicht was das Tool bewirkt (siehe Regel 1).
+  Aus demselben Grund heißt es `update_page` statt `update_plugin`: „Plugin“ ist
+  LaraPaper-Vokabular, der Nutzer spricht von Seiten.
+- Für alles andere gibt es `update_page`, bei dem jede Seite ein festes Layout und
+  ein eigenes Schema hat. Neuer Inhalt heißt dann **neue Seite**, nicht neues Tool
+  und schon gar nicht ein Universal-Tool, in das das Modell freies Layout kippt.
 - **Lesen gehört genauso zugeschnitten wie Schreiben.** Damit der Agent einen Fehler
-  auf dem Display gezielt korrigieren kann, gibt es `list_plugins` und `get_plugin`.
-  `get_plugin` liefert nur die Felder, **nicht das Markup**. Das Modell soll Inhalte
+  auf dem Display gezielt korrigieren kann, gibt es `list_pages` und `get_page`.
+  `get_page` liefert nur die Felder, **nicht das Markup**. Das Modell soll Inhalte
   korrigieren, nicht das Layout.
 
 ## Bonus zur Sicherheit
@@ -167,7 +233,7 @@ Satz geändert: wann das Ergebnis auf dem Display zu sehen ist.
   und die feste Vorlage im Server gibt ihn mit `{{ }}` escapt aus. Die Grenze zwischen
   Daten und Code zieht der **MCP-Server**, nicht das Modell.
 - Zugangsdaten kommen **nie ins Modell**. Der LaraPaper-Token und die Seiten-IDs
-  bleiben in `.env`. Das Modell wählt nur `plugin: "zitat"`, und der Server übersetzt
+  bleiben in `.env`. Das Modell wählt nur `page: "zitat"`, und der Server übersetzt
   das in die ID. Der Token kann Seiten überschreiben und gehört deshalb behandelt wie
   ein Passwort.
 - Verbindungen und Tools **regelmäßig durchsehen**. Jeder Harness zeigt, welche

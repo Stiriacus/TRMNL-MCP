@@ -39,9 +39,9 @@ sequenceDiagram
     H->>T: ausführen
     T-->>H: {"weekday": "Mittwoch", "formatted": "30 / 09 / 2026", "isoWeek": 40}
     H->>M: Ergebnis
-    M-->>H: tool_use: render_joke_screen(joke: {…}, date: {…})
+    M-->>H: tool_use: update_joke_page(joke: {…}, date: {…})
     H->>T: ausführen
-    T-->>H: {"plugin": "witz", "status": "updated"}
+    T-->>H: {"page": "witz", "status": "updated"}
     H->>M: Ergebnis
     M-->>H: "Fertig. Der Witz erscheint, sobald die Seite dran ist."
     H->>U: Antwort

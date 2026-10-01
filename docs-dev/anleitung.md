@@ -270,11 +270,12 @@ export function registerGetJoke(server: McpServer) {
     'get_joke',
     {
       description:
-        'Liefert einen kurzen, jugendfreien Witz aus der Kategorie Programmierung oder ' +
-        'gemischt. Mit topic kann nach einem Stichwort gefiltert werden (z. B. coffee ' +
-        'fuer Kaffeewitze). Die Stichwortsuche funktioniert praktisch nur mit lang=en, ' +
-        'der deutsche Bestand ist klein. Nutze es, wenn ein Screen einen Witz zeigen ' +
-        'soll. Erfinde nie selbst einen Witz, sondern rufe das Tool bei Bedarf erneut auf.',
+        'Liefert einen kurzen, jugendfreien Witz mit Aufbau und Pointe, wahlweise ' +
+        'Programmierwitz oder gemischt. Mit topic kann nach einem Stichwort gefiltert ' +
+        'werden (z. B. coffee fuer Kaffeewitze). Die Stichwortsuche funktioniert praktisch ' +
+        'nur mit lang=en, der deutsche Bestand ist klein. Nutze es, wann immer ein Witz ' +
+        'gebraucht wird. Erfinde nie selbst einen Witz, sondern rufe das Tool bei Bedarf ' +
+        'erneut auf.',
       inputSchema: z.object({
         category: z.enum(['Programming', 'Any']).default('Programming'),
         lang: z.enum(['de', 'en']).default('de'),
@@ -301,7 +302,7 @@ Testen im Inspector: Tool `get_joke` einmal ohne Parameter, einmal mit
 aufrufen. Der dritte Aufruf muss den Fehlertext mit Handlungsempfehlung liefern.
 Ergebnisse gegen die Rückgabestruktur in `03-mcp-tool-spezifikation.md` prüfen.
 
-### Teil B – `get_date_info` und `render_joke_screen` mit dem Agenten bauen
+### Teil B – `get_date_info` und `update_joke_page` mit dem Agenten bauen
 
 Statt die Dateien selbst zu tippen, jetzt Claude Code im Projektordner bitten,
 sie nach Spezifikation zu bauen. Beispiel-Auftrag:
@@ -322,7 +323,7 @@ laut Spezifikation nicht sein)?
 
 #### Vorbereitung: die Seite „Witz des Tages“ in LaraPaper anlegen
 
-`render_joke_screen` überschreibt eine bestehende Seite. Die muss es einmal geben,
+`update_joke_page` überschreibt eine bestehende Seite. Die muss es einmal geben,
 und zwar mit einer `trmnlp_id`. Seiten, die in der Oberfläche angelegt wurden, haben
 keine. Deshalb über die API anlegen:
 
@@ -344,25 +345,25 @@ Die Seite heißt vorerst „New TRMNLP Plugin“. Den richtigen Namen bekommt si
 ersten Upload. Danach in der LaraPaper-Oberfläche **einmalig in die Playlist des
 Geräts aufnehmen**. Das geht nur dort, eine Playlist-API gibt es nicht.
 
-#### `render_joke_screen` bauen
+#### `update_joke_page` bauen
 
 Gleiches Vorgehen wie bei `get_date_info`. Diesmal liest Claude Code zusätzlich die
 Layout-Spezifikation und den Abschnitt zur Archiv-Schnittstelle:
 
 ```text
 Lies docs-dev/02-layout-spezifikation.md, docs-dev/03-mcp-tool-spezifikation.md
-(Abschnitt "render_joke_screen") und docs-dev/06-recherche-trmnl.md (Abschnitt 7.7).
+(Abschnitt "update_joke_page") und docs-dev/06-recherche-trmnl.md (Abschnitt 7.7).
 
 1. Erstelle server/templates/witz.blade.php nach dem Layout aus 02 mit den Klassen
    des TRMNL-Frameworks. Texte nur ueber {{ $data['setup'] }} usw. ausgeben, nie
    {!! !!}. Sonderfall Einzeiler (leere Pointe) beachten.
-2. Erstelle server/src/lib/larapaper.ts mit pushPage(plugin, data): Vorlage laden,
+2. Erstelle server/src/lib/larapaper.ts mit pushPage(page, data): Vorlage laden,
    Revisionsmarke {{-- rev: <ISO-Zeit> --}} voranstellen, settings.yml bauen
    (name, strategy: static, refresh_interval: 60, static_data als JSON-String),
    beides mit fflate zu einem ZIP packen und per fetch als multipart-Feld "file" an
    POST /api/plugin_settings/{id}/archive schicken. Header: Authorization Bearer und
    Accept: application/json. URL, Token und IDs nur aus process.env.
-3. Erstelle server/src/tools/renderJokeScreen.ts als duennen MCP-Tool-Wrapper:
+3. Erstelle server/src/tools/updateJokePage.ts als duennen MCP-Tool-Wrapper:
    Texte kuerzen wie in 03 beschrieben, dann pushPage('witz', …).
 ```
 
@@ -387,8 +388,8 @@ npx @modelcontextprotocol/inspector npx tsx src/mcp-server.ts
 Im geöffneten Browser-Tab: **Connect**, dann Tab **Tools**, jedes Tool einzeln mit
 Testwerten aufrufen und die Rückgabe gegen `03-mcp-tool-spezifikation.md` prüfen.
 
-**Checkpoint:** `get_joke`, `get_date_info` und `render_joke_screen` laufen einzeln
-im Inspector und liefern plausible Ergebnisse. Nach `render_joke_screen` heißt die
+**Checkpoint:** `get_joke`, `get_date_info` und `update_joke_page` laufen einzeln
+im Inspector und liefern plausible Ergebnisse. Nach `update_joke_page` heißt die
 Seite in LaraPaper „Witz des Tages“, und ihre **Vorschau** zeigt den Testwitz.
 
 **Selbstcheck:**
@@ -438,19 +439,21 @@ selbst auf `topic: "coffee"` und `lang: "en"` kommt und den Witz übersetzt.
 - Hält sich die Übersetzung an die Regeln aus `04-prompt-design.md` (Pointe
   erhalten, Längen, kein erklärtes Wortspiel)? Falls nicht: System-Prompt/Anweisung
   präzisieren, nicht das Layout ändern.
-- Ruft der Agent `render_joke_screen` wirklich erst als letzten Schritt auf? Falls er
-  es zu früh aufruft (z. B. ohne Witz), ist das ein Hinweis auf eine zu
-  unklare Tool-Beschreibung – Testfall für "Bewusst kaputt machen" weiter unten.
+- Ruft der Agent `update_joke_page` erst auf, wenn Witz und Datum vorliegen? Eine
+  Reihenfolge steht in keiner Tool-Beschreibung, nur woher die Eingaben kommen. Ruft
+  er es zu früh auf (z. B. ohne Witz), ist die Herkunft in Beschreibung oder Schema
+  zu unklar – Testfall für "Bewusst kaputt machen" weiter unten.
 
 **Checkpoint:** Die Vorschau der Seite „Witz des Tages“ in LaraPaper zeigt korrektes
 Datum, korrekte KW und einen Witz aus der JokeAPI, sauber in Setup und Pointe getrennt.
 
 **Selbstcheck:**
-- Warum ruft der Agent die Tools in dieser Reihenfolge auf – steht das in den
-  Tool-Beschreibungen oder hat er es "erraten"?
+- Warum ruft der Agent die Tools in dieser Reihenfolge auf, obwohl keine
+  Tool-Beschreibung eine Reihenfolge nennt? (Tipp: Schema von `update_joke_page`,
+  „aus get_joke“, „Rückgabe von get_date_info“.)
 - Was ändert sich, wenn ich die Beschreibung von `get_joke` auf ein einziges
   Wort kürze? Findet der Agent dann noch den Hinweis zu `lang=en`?
-- Kann ich erklären, warum `get_date_info` bewusst kein LLM nutzt, `render_joke_screen`
+- Kann ich erklären, warum `get_date_info` bewusst kein LLM nutzt, `update_joke_page`
   aber schon vom Modell bearbeitete Eingaben (den übersetzten Witz) entgegennimmt?
 
 ---
@@ -544,7 +547,7 @@ Test die aktuelle LaraPaper-Doku konsultieren.
 Es gibt bewusst **keine Zeitsteuerung**. Einen neuen Screen erzeugst du, indem du
 den Agenten beauftragst – genau wie in Phase 4. So läuft es dann ab:
 
-1. Der Agent ruft `render_joke_screen` auf, der MCP-Server lädt die Seite hoch.
+1. Der Agent ruft `update_joke_page` auf, der MCP-Server lädt die Seite hoch.
 2. Weil sich das Markup geändert hat (Revisionsmarke), verwirft LaraPaper das
    gespeicherte Bild der Seite.
 3. Beim nächsten Geräte-Abruf, bei dem die Seite in der Playlist dran ist, rendert
@@ -559,8 +562,8 @@ Reihe ist, den Witz des Tages mit Datum und Kalenderwoche.
 
 ### Ausbau: Inhalte gezielt korrigieren
 
-Mit den Tools aus `07-weitere-mcp-tools.md` (`list_plugins`, `get_plugin`,
-`update_plugin`) kann der Agent einen Fehler auf dem Display selbst finden und
+Mit den Tools aus `07-weitere-mcp-tools.md` (`list_pages`, `get_page`,
+`update_page`) kann der Agent einen Fehler auf dem Display selbst finden und
 beheben. Ein guter Demo-Auftrag:
 
 ```text
@@ -568,7 +571,7 @@ Auf dem Display steht beim Zitat "Unbekannt" als Autor. Prüf das und korrigier 
 ohne den Rest der Seite zu ändern.
 ```
 
-Beobachten: Liest der Agent die Seite erst mit `get_plugin`, bevor er schreibt? Ändert
+Beobachten: Liest der Agent die Seite erst mit `get_page`, bevor er schreibt? Ändert
 er wirklich nur den Autor?
 
 **Selbstcheck:**
@@ -614,9 +617,9 @@ Dieser Abschnitt ist bewusst Teil der Anleitung, nicht optional – laut Lernstr
    Fehler, oder erfindet er einen Witz?
 2. **Falsches Schema zurückgeben:** In `get_date_info` `isoWeek` versehentlich als
    String statt Zahl zurückgeben (Rückgabetext, nicht das Zod-Schema ändern).
-   Beobachten: Meldet `render_joke_screen` einen Fehler? Versteht der Agent die
+   Beobachten: Meldet `update_joke_page` einen Fehler? Versteht der Agent die
    Fehlermeldung und korrigiert er selbstständig?
-3. **Tool-Beschreibung verschlechtern:** Die Beschreibung von `render_joke_screen` auf
+3. **Tool-Beschreibung verschlechtern:** Die Beschreibung von `update_joke_page` auf
    ein Wort kürzen ("rendert"). Im selben Auftrag wie in Phase 4 beobachten, ob
    der Agent das Tool noch zuverlässig und zur richtigen Zeit aufruft.
 4. **Timeout simulieren:** In `fetchJoke` das `AbortSignal.timeout(8000)` auf

@@ -18,7 +18,7 @@ melden, **keine Werte erfinden**.
 | JokeAPI liefert unerwartetes Format (API-Änderung) | JSON-Parsing/Zod-Validierung schlägt fehl | Wie „nicht erreichbar“; zusätzlich Stolperstein-Eintrag anlegen, da das auf eine API-Änderung hindeutet |
 | JokeAPI-Rate-Limit (120 Anfragen pro Minute) | HTTP 429 | `isError: true` mit Hinweis, kurz zu warten. Bei einem Agenten, der „nur noch einen Witz“ holt, durchaus erreichbar |
 | LLM / Harness nicht erreichbar | Kein Agenten-Lauf möglich | Kein neuer Screen, der zuletzt gerenderte bleibt aktiv – bewusst akzeptiert, da es keine Zeitsteuerung gibt |
-| Agent liefert zu langen Witz | Zeichenlimit-Check in `render_joke_screen` | Setup auf 140, Pointe auf 100 Zeichen kürzen (an Wortgrenze, mit "…") und Warnung im Tool-Ergebnis zurückgeben, damit der Agent nachbessern kann |
+| Agent liefert zu langen Witz | Zeichenlimit-Check in `update_joke_page` | Setup auf 140, Pointe auf 100 Zeichen kürzen (an Wortgrenze, mit "…") und Warnung im Tool-Ergebnis zurückgeben, damit der Agent nachbessern kann |
 | LaraPaper beim Upload nicht erreichbar / Timeout | `fetch` in `lib/larapaper.ts` schlägt fehl | `isError: true`. Die Seite in LaraPaper bleibt unverändert, das Display zeigt weiter den letzten Witz. Agent meldet den Fehler und behauptet nicht „fertig“ |
 | Token ungültig (HTTP 401) | Antwort der Archiv-Schnittstelle | `isError: true` mit „Token ungültig oder abgelaufen“. Das Modell kann das nicht beheben und soll nicht erneut versuchen |
 | Upload abgelehnt (HTTP 404, 422, 500) | Antwort der Archiv-Schnittstelle | `isError: true` mit Status und Meldung. Das ist ein Fehler im Server-Code (ZIP-Aufbau, falsche ID), kein Fall für das Modell. Alte Seite bleibt aktiv |
@@ -47,7 +47,7 @@ Bildbibliothek** (z. B. `@napi-rs/canvas`, SVG + `sharp`). Entschieden ist: **we
 noch**. LaraPaper rendert selbst (HTML → Bild, Graustufen, Größenlimit) mit dem
 TRMNL-Framework. Der MCP-Server lädt nur die Seite hoch (siehe `06`, Abschnitt 7.7).
 
-Die Schnittstelle von `render_joke_screen` zum Modell (Name, Eingabeschema) ist
+Die Schnittstelle von `update_joke_page` zum Modell (Name, Eingabeschema) ist
 dabei gleich geblieben. Nur die Rückgabe enthält keinen Dateinamen und keine URL mehr.
 
 ## Bewusst Kaputtes einplanen (siehe auch `anleitung.md`)
@@ -59,8 +59,8 @@ sichtbar zu machen:
    der Agent den Fehler erkennt und wie er reagiert (bricht ab? meldet den Fehler?
    erfindet einen Witz?).
 2. `get_date_info` absichtlich ein falsches Feld zurückgeben lassen (z. B.
-   `isoWeek` als String statt Zahl) → beobachten, wie `render_joke_screen` (Zod)
+   `isoWeek` als String statt Zahl) → beobachten, wie `update_joke_page` (Zod)
    reagiert und ob der Agent den Validierungsfehler richtig interpretiert.
-3. Die Tool-Beschreibung von `render_joke_screen` auf eine Zeile ohne Kontext kürzen
+3. Die Tool-Beschreibung von `update_joke_page` auf eine Zeile ohne Kontext kürzen
    → beobachten, ob der Agent das Tool noch zuverlässig zur richtigen Zeit
    aufruft.

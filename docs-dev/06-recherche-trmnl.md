@@ -11,7 +11,7 @@ Playlists schon mitbringt. Die API-Angaben unten stammen direkt aus dem Quellcod
 >
 > **Gewählter Weg (Abschnitt 7.7):** Der eigene MCP-Server lädt jede Seite als ZIP
 > (`settings.yml` mit `static_data` und eine feste Blade-Vorlage) über die
-> Archiv-Schnittstelle von LaraPaper hoch. `render_joke_screen` wird so zu einem
+> Archiv-Schnittstelle von LaraPaper hoch. `update_joke_page` wird so zu einem
 > einzigen HTTP-Aufruf. LaraPaper wird dafür nicht verändert, sein eingebauter
 > MCP-Server wird nicht genutzt, es gibt keinen Webhook.
 >
@@ -170,17 +170,17 @@ für Playlists gibt es nicht (7.4).
 
 | Bisher (Plan in `anleitung.md`) | Mit LaraPaper |
 |---|---|
-| `render_joke_screen` → Playwright → PNG → `sharp` → Datei | `render_joke_screen` → ZIP (`settings.yml` + `witz.blade.php`) → `POST /api/plugin_settings/{id}/archive` (7.7) |
+| `update_joke_page` → Playwright → PNG → `sharp` → Datei | `update_joke_page` → ZIP (`settings.yml` + `witz.blade.php`) → `POST /api/plugin_settings/{id}/archive` (7.7) |
 | Eigener Express-Server mit `/api/display`, `/api/setup`, `/api/log` | **entfällt**, das übernimmt LaraPaper |
 | PNG-Größenlimit, Graustufen, 1-px-Linien selbst prüfen | übernimmt LaraPaper und das TRMNL-Framework |
 | `02-layout-spezifikation.md` mit Pixelmaßen | wird zur Grundlage der festen Blade-Vorlage `server/templates/witz.blade.php` |
 | `show_message` (optional) | Seite „nachricht“ per Archiv-Upload. Ein leerer Text blendet sie aus (`TRMNL_SKIP_DISPLAY`) |
 | `get_device_status` (optional) | `GET /api/devices` |
-| weitere Seiten (`07-weitere-mcp-tools.md`) | `update_plugin`, `list_plugins`, `get_plugin` über dieselbe Archiv-Schnittstelle |
+| weitere Seiten (`07-weitere-mcp-tools.md`) | `update_page`, `list_pages`, `get_page` über dieselbe Archiv-Schnittstelle |
 
 Die **Tool-Verträge** in `03-mcp-tool-spezifikation.md` bleiben fast gleich: Name
 und Eingabe-Schema ändern sich nicht. Anders sind nur die Rückgabe von
-`render_joke_screen` (`plugin`, `status`, `rev`, `hint` statt Datei/URL) und ein Satz
+`update_joke_page` (`plugin`, `status`, `rev`, `hint` statt Datei/URL) und ein Satz
 der Beschreibung (die Seite erscheint erst, wenn sie in der Playlist an der Reihe ist). Für die Präsentation ist das ideal: *Der Vertrag zum
 Modell ist stabil, die Implementierung dahinter ist austauschbar.*
 
@@ -273,7 +273,7 @@ Image-Webhook …) nicht.
 
 > **Entschieden:** LaraPaper wird nicht erweitert (7.6). Die Tool-Vorschläge unten
 > gelten nur für den Fall, dass sich das später ändert. Unser eigener MCP-Server
-> liest und korrigiert die **Seiten** (`list_plugins`, `get_plugin`, `update_plugin`
+> liest und korrigiert die **Seiten** (`list_pages`, `get_page`, `update_page`
 > in `07-weitere-mcp-tools.md`). Playlists richtet man einmalig in der Oberfläche ein.
 
 Playlists existieren nur in der Livewire-Oberfläche (`playlists.index`). Es gibt

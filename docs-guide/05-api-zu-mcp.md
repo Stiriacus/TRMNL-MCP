@@ -33,7 +33,7 @@ flowchart LR
         T1[get_on_this_day]
         T2[get_quote_of_the_day]
         T3[get_joke]
-        T4[update_plugin]
+        T4[update_page]
     end
     A1 --- T1
     A2 --- T2
@@ -69,9 +69,10 @@ server.registerTool(
   'get_on_this_day',
   {
     description:
-      'Liefert historische Ereignisse, die an einem Kalendertag stattfanden ' +
-      '(Quelle: deutsche Wikipedia). Nutze es für "Heute vor X Jahren"-Inhalte. ' +
-      'Wähle für ein Display ein allgemein interessantes, nicht belastendes Ereignis.',
+      'Liefert ausgewählte historische Ereignisse zu einem Kalendertag, mit Jahr ' +
+      'und Kurztext (Quelle: deutsche Wikipedia). Nutze es für "Heute vor X ' +
+      'Jahren"-Inhalte. Die Auswahl enthält oft auch Kriege und Katastrophen, ' +
+      'wähle passend zum Zweck.',
     inputSchema: z.object({
       month: z.number().int().min(1).max(12),
       day: z.number().int().min(1).max(31),
@@ -91,9 +92,11 @@ server.registerTool(
 
 Der Adapter leistet vier Dinge.
 
-- **Die Beschreibung** sagt, *wann* und *wofür* das Tool gedacht ist, inklusive eines
-  Hinweises zur Auswahl (Kriege und Katastrophen eignen sich nicht für den
-  Flur-Bildschirm).
+- **Die Beschreibung** sagt, *was* das Tool liefert und *wofür* es gedacht ist,
+  inklusive einer Warnung zum Inhalt (oft Kriege und Katastrophen). *Was passt*,
+  entscheidet der Auftrag: Für den Flur-Bildschirm etwas Leichtes, für den
+  Geschichtsunterricht vielleicht gerade nicht. Das Tool kennt den Einsatzort nicht
+  und muss ihn nicht kennen.
 - **Das Schema** liefert klare, geprüfte Parameter statt URL-Bastelei.
 - **Die Kuratierung** macht aus 30 Einträgen 5 und aus 10 Feldern 2, mit bereinigtem
   Text.
@@ -129,9 +132,9 @@ flowchart LR
     end
     subgraph S2 [MCP-Server trmnl-display]
         J[get_joke]
-        R[render_joke_screen]
-        U[update_plugin]
-        L[list_plugins · get_plugin]
+        R[update_joke_page]
+        U[update_page]
+        L[list_pages · get_page]
     end
     AG[Agent] --> S1
     AG --> S2
@@ -150,7 +153,7 @@ Abrufen, Bereinigen und Anzeigen bleibt Code.
     Die Display-Tools zeigen die These von oben noch einmal von der anderen Seite.
     LaraPaper will für eine Seite ein **ZIP** mit einer YAML-Datei und einem
     Blade-Template, hochgeladen als Multipart-Formular. Das Modell sieht davon nichts.
-    Es ruft nur `update_plugin({ plugin: "zitat", fields: { quote, author } })` auf.
+    Es ruft nur `update_page({ page: "zitat", fields: { quote, author } })` auf.
     Vorlage, Revisionsmarke, ZIP und Token ergänzt der Server. Die Schnittstelle ist
     ursprünglich für die TRMNL-Kommandozeile gedacht. Ohne MCP-Adapter könnte ein Agent
     sie kaum zuverlässig bedienen.

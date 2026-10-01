@@ -11,19 +11,19 @@ hängt davon ab, wie weit Seite 7 gekommen ist.
 |---|---|
 | 1. Der Witz des Tages | `trmnl-display` mit drei Tools, LaraPaper mit der Seite „Witz des Tages“ |
 | 2. Anderer Harness, anderes Modell | Akt 1 und pi |
-| 3. Die Tagesplaylist | zusätzlich `tagesinhalte`, `update_plugin` und die übrigen Seiten |
-| 4. Einen Fehler gezielt korrigieren | Akt 3 und `list_plugins`, `get_plugin` |
+| 3. Die Tagesplaylist | zusätzlich `tagesinhalte`, `update_page` und die übrigen Seiten |
+| 4. Einen Fehler gezielt korrigieren | Akt 3 und `list_pages`, `get_page` |
 | 5. Bewusst kaputt machen | Akt 1 |
 
 ## Was aus Seite 7 da sein muss
 
-- [ ] `trmnl-display` mit `get_joke`, `get_date_info` und `render_joke_screen`,
+- [ ] `trmnl-display` mit `get_joke`, `get_date_info` und `update_joke_page`,
       jedes Tool im Inspector geprüft
 - [ ] in Claude Code angebunden, sodass `claude mcp list` den Server zeigt
 - [ ] für Akt 2 pi mit DeepSeek-Key, ein vorher heruntergeladenes Ollama-Modell
       (`ollama pull …` dauert sonst Minuten) und eine vorhandene `.pi/mcp.json`
-- [ ] für Akt 3 der Server `tagesinhalte`, gebaut und angebunden, dazu `update_plugin`
-- [ ] für Akt 4 `list_plugins` und `get_plugin`
+- [ ] für Akt 3 der Server `tagesinhalte`, gebaut und angebunden, dazu `update_page`
+- [ ] für Akt 4 `list_pages` und `get_page`
 - [ ] LaraPaper erreichbar, Token und Seiten-IDs in `server/.env`, die Seiten `witz`,
       `zitat`, `geschichte`, `http` und `nachricht` angelegt
       (→ [Bauanleitung](../docs-dev/anleitung.md), Phase 3 Teil B)
@@ -49,7 +49,7 @@ Screen.
 Auf vier Dinge achten wir.
 
 1. **Die Reihenfolge.** Das Modell holt erst Witz und Datum (oft parallel) und ruft
-   `render_joke_screen` zuletzt auf. Das steht in keinem Code, sondern **nur in den
+   `update_joke_page` zuletzt auf. Das steht in keinem Code, sondern **nur in den
    Tool-Beschreibungen**, die wir auf Seite 7 geschrieben haben.
 2. **Die Parameter.** Im Auftrag steht „Kaffeewitz“, das Tool will `topic` und
    `lang`. Wählt das Modell `topic: "coffee"` und `lang: "en"`, wie es die
@@ -90,9 +90,10 @@ Hier lohnt der Blick auf vier Punkte.
 - Er ruft die **Datenquellen parallel** ab und macht dann die Arbeit, die Code nicht
   kann, also auswählen, übersetzen, kürzen und einen Spruch zum Statuscode
   schreiben.
-- **Welches Geschichtsereignis** wählt er, und warum? Die Tool-Beschreibung bittet um
-  „nicht belastend“.
-- Per `update_plugin` überschreibt er die Seiten in LaraPaper. Die Playlist rotiert
+- **Welches Geschichtsereignis** wählt er, und warum? Die Tool-Beschreibung warnt
+  nur, dass die Liste auch Kriege und Katastrophen enthält. Was passt, sagt der
+  Auftrag. Steht dort nichts, lohnt ein zweiter Lauf mit „… für den Flur-Bildschirm“.
+- Per `update_page` überschreibt er die Seiten in LaraPaper. Die Playlist rotiert
   bei jedem Refresh zur nächsten Seite, und jede erscheint mit dem neuen Inhalt, sobald
   sie dran ist. **Ohne LaraPaper** lässt man die Display-Tools weg, dann zeigt der
   Agent die Inhalte im Chat.
@@ -107,11 +108,11 @@ ohne den Rest der Seite zu ändern.
 Das ist der Fall aus dem Alltag: Etwas auf dem Display ist falsch, und der Agent soll
 es finden und beheben, ohne alles neu zu machen.
 
-- Findet er die Seite über `list_plugins`, oder rät er?
-- **Liest er zuerst** mit `get_plugin`, bevor er schreibt? Ein Agent, der blind neu
+- Findet er die Seite über `list_pages`, oder rät er?
+- **Liest er zuerst** mit `get_page`, bevor er schreibt? Ein Agent, der blind neu
   schreibt, ersetzt womöglich auch das Zitat.
 - Holt er den richtigen Autor aus `get_quote_of_the_day`, oder **erfindet** er einen?
-- Ruft er `update_plugin` mit dem alten Zitat und dem neuen Autor auf?
+- Ruft er `update_page` mit dem alten Zitat und dem neuen Autor auf?
 
 Die Grenze zeigt sich auch: Playlists kann der Agent nicht lesen. Welche Seite in
 welcher Playlist steckt, ist in LaraPaper festgelegt. Er findet sich nur über die
@@ -124,9 +125,9 @@ Hier sieht man am deutlichsten, **wie ein Agent „denkt“.** Nach jedem Versuc
 
 | # | Was wird kaputt gemacht? | Frage | Was man typischerweise sieht |
 |---|---|---|---|
-| 1 | Beschreibung von `render_joke_screen` auf `"rendert"` kürzen | Ruft das Modell es noch zur richtigen Zeit auf? | Starke Modelle raten oft richtig, schwache rufen es zu früh oder gar nicht auf |
+| 1 | Beschreibung von `update_joke_page` auf `"rendert"` kürzen | Ruft das Modell es noch zur richtigen Zeit auf? | Starke Modelle raten oft richtig, schwache rufen es zu früh oder gar nicht auf |
 | 2 | JokeAPI-URL in `lib/jokes.ts` ungültig machen | Meldet das Modell den Fehler, oder erfindet es einen Witz? | `isError: true` kommt an. Gute Modelle melden es, schwache denken sich gern selbst einen Witz aus |
-| 3 | `get_date_info` gibt `isoWeek` als String zurück | Wie reagiert `render_joke_screen`, und korrigiert das Modell selbst? | Validierungsfehler, oft korrigiert das Modell den Typ im zweiten Versuch |
+| 3 | `get_date_info` gibt `isoWeek` als String zurück | Wie reagiert `update_joke_page`, und korrigiert das Modell selbst? | Validierungsfehler, oft korrigiert das Modell den Typ im zweiten Versuch |
 | 4 | Den Auftrag unklar formulieren, etwa *„Mach was Schönes aufs Display.“* | Was macht das Modell ohne klare Vorgaben? | Zeigt, wie viel an Auftrag und `AGENTS.md` hängt |
 | 5 | Tool zurück auf `render_screen` umbenennen, die Grenze aus der Beschreibung streichen und dann *„Zeig nach dem Witz noch das Zitat des Tages.“* | Sucht das Modell ein passendes Tool, oder missbraucht es den Witz-Screen? | Schwache Modelle stecken das Zitat in `setup` und den Autor in `punchline`. Das Schema merkt nichts |
 | 6 | Im Tool `get_on_this_day` die Bereinigung von `U+00AD` entfernen *(nur mit Display)* | Sieht man es auf dem Display? | Unsichtbare Zeichen zeigen, dass Daten aus APIs nie so sauber sind, wie sie aussehen |
@@ -145,7 +146,7 @@ Hier sieht man am deutlichsten, **wie ein Agent „denkt“.** Nach jedem Versuc
   ihn reparieren lassen. Das ist selbst eine gute Demo.
 - **Das Display reagiert nicht.** Die Vorschau der Seite in LaraPaper zeigen, die
   Logik ist dieselbe.
-- **LaraPaper ist nicht erreichbar.** Akt 1 ohne `render_joke_screen` zeigen (der
+- **LaraPaper ist nicht erreichbar.** Akt 1 ohne `update_joke_page` zeigen (der
   Agent präsentiert den Witz im Chat), oder den Ausfall selbst zur Demo machen
   (Fall 8 oben).
 - **Die Modell-API ist nicht erreichbar.** Auf Ollama (lokal) ausweichen. Das ist

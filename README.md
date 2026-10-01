@@ -30,7 +30,7 @@ Code-Gerüst zum Auspacken.
 | `docs-dev/anleitung.md` | Schritt-für-Schritt-Anleitung (Phase 0–5), Windows, mit Codebeispielen |
 | `docs-dev/stolpersteine.md` | Leeres Lernlog zum Ausfüllen während der Arbeit |
 | `docs-dev/06-recherche-trmnl.md` | Recherche: LaraPaper (Push-Logik im Quellcode, Archiv-Schnittstelle für Seiten, Playlists), Seeed-Kit |
-| `docs-dev/07-weitere-mcp-tools.md` | Weitere Tools (HTTP-Status, Zitat, Geschichte), Tagesplaylist und gezielte Korrektur (`list_plugins`, `get_plugin`) |
+| `docs-dev/07-weitere-mcp-tools.md` | Weitere Tools (HTTP-Status, Zitat, Geschichte), Tagesplaylist und gezielte Korrektur (`list_pages`, `get_page`) |
 
 **Empfohlene Lesereihenfolge:** `01-projektuebersicht.md` → `02-layout-spezifikation.md`
 → `03-mcp-tool-spezifikation.md` → `04-prompt-design.md` → `05-fehler-und-fallbacks.md`

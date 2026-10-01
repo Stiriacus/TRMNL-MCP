@@ -74,7 +74,7 @@ System-Prompt präzisieren, bevor Layout oder Schema angepasst werden.
 ## Iterationshinweise (Phase 4)
 
 - **Zu lang?** Zeichenlimit im Prompt UND als harte Nachbearbeitung im Code
-  durchsetzen (siehe `render_joke_screen`-Fehlerfälle in
+  durchsetzen (siehe `update_joke_page`-Fehlerfälle in
   `03-mcp-tool-spezifikation.md`) – sich nicht allein auf das Modell verlassen.
 - **Pointe wandert ins Setup?** Im System-Prompt ausdrücklich sagen, dass Setup und
   Pointe getrennt bleiben, und ein Beispiel mitgeben.
