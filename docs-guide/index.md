@@ -16,7 +16,7 @@
    welches Modell dahintersteckt. Im Kern ist MCP eine **Erweiterung** bestehender
    Technik (APIs) und keine Revolution.
 4. Worauf es bei einem **MCP-Server** wirklich ankommt, gezeigt an den Tools
-   `get_joke`, `get_date_info` und `update_joke_page`.
+   `get_joke`, `get_date_info` und `update_page`.
 5. Wo ein **Agent** sinnvoll ist und wo **normaler Code** besser ist (→ Seite 6, Regel 4,
    und Seite 9).
 6. Wie man mit einem **Agenten** einen MCP-Server baut. Das erste Tool entsteht von
@@ -58,7 +58,7 @@ weiter, wo wir beim letzten Mal aufgehört haben.
 flowchart LR
     U([Auftrag im Chat]) --> H[Harness<br/>Claude Code oder pi]
     H <--> M[(Modell<br/>Claude · DeepSeek · Ollama)]
-    H <-->|MCP| S[MCP-Server<br/>get_joke<br/>get_date_info<br/>update_joke_page]
+    H <-->|MCP| S[MCP-Server<br/>get_joke<br/>get_date_info<br/>update_page]
     S --> W[JokeAPI<br/>Witze]
     S -->|Seite hochladen| B[LaraPaper<br/>BYOS-Server<br/>Seiten + Playlist]
     B -->|Gerät fragt nach| D[Seeed TRMNL 7,5″<br/>E-Ink-Display]

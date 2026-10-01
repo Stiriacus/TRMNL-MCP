@@ -11,18 +11,19 @@ hängt davon ab, wie weit Seite 7 gekommen ist.
 |---|---|
 | 1. Der Witz des Tages | `trmnl-display` mit drei Tools, LaraPaper mit der Seite „Witz des Tages“ |
 | 2. Anderer Harness, anderes Modell | Akt 1 und pi |
-| 3. Die Tagesplaylist | zusätzlich `tagesinhalte`, `update_page` und die übrigen Seiten |
+| 3. Die Tagesplaylist | zusätzlich `tagesinhalte` und die übrigen Seiten in `update_page` |
 | 4. Einen Fehler gezielt korrigieren | Akt 3 und `list_pages`, `get_page` |
 | 5. Bewusst kaputt machen | Akt 1 |
 
 ## Was aus Seite 7 da sein muss
 
-- [ ] `trmnl-display` mit `get_joke`, `get_date_info` und `update_joke_page`,
+- [ ] `trmnl-display` mit `get_joke`, `get_date_info` und `update_page` (Seite `witz`),
       jedes Tool im Inspector geprüft
 - [ ] in Claude Code angebunden, sodass `claude mcp list` den Server zeigt
 - [ ] für Akt 2 pi mit DeepSeek-Key, ein vorher heruntergeladenes Ollama-Modell
       (`ollama pull …` dauert sonst Minuten) und eine vorhandene `.pi/mcp.json`
-- [ ] für Akt 3 der Server `tagesinhalte`, gebaut und angebunden, dazu `update_page`
+- [ ] für Akt 3 der Server `tagesinhalte`, gebaut und angebunden, dazu die Seiten
+      `zitat`, `geschichte` und `http` in `update_page`
 - [ ] für Akt 4 `list_pages` und `get_page`
 - [ ] LaraPaper erreichbar, Token und Seiten-IDs in `server/.env`, die Seiten `witz`,
       `zitat`, `geschichte`, `http` und `nachricht` angelegt
@@ -48,9 +49,10 @@ Screen.
 
 Auf vier Dinge achten wir.
 
-1. **Die Reihenfolge.** Das Modell holt erst Witz und Datum (oft parallel) und ruft
-   `update_joke_page` zuletzt auf. Das steht in keinem Code, sondern **nur in den
-   Tool-Beschreibungen**, die wir auf Seite 7 geschrieben haben.
+1. **Die Reihenfolge.** Das Modell holt erst den Witz und ruft dann `update_page`
+   auf. Das steht in keinem Code und in keiner Beschreibung als Ablauf. Es folgt aus
+   dem Schema: Der Witz stammt *aus* `get_joke`. Holt das Modell auch das Datum,
+   obwohl der Server es selbst setzt? Der Auftrag nennt es, das Schema nicht.
 2. **Die Parameter.** Im Auftrag steht „Kaffeewitz“, das Tool will `topic` und
    `lang`. Wählt das Modell `topic: "coffee"` und `lang: "en"`, wie es die
    Beschreibung empfiehlt, oder probiert es erst Deutsch und reagiert dann auf den
@@ -125,11 +127,11 @@ Hier sieht man am deutlichsten, **wie ein Agent „denkt“.** Nach jedem Versuc
 
 | # | Was wird kaputt gemacht? | Frage | Was man typischerweise sieht |
 |---|---|---|---|
-| 1 | Beschreibung von `update_joke_page` auf `"rendert"` kürzen | Ruft das Modell es noch zur richtigen Zeit auf? | Starke Modelle raten oft richtig, schwache rufen es zu früh oder gar nicht auf |
+| 1 | Beschreibung von `update_page` auf `"rendert"` kürzen | Ruft das Modell es noch zur richtigen Zeit auf? | Starke Modelle raten oft richtig, schwache rufen es zu früh oder gar nicht auf |
 | 2 | JokeAPI-URL in `lib/jokes.ts` ungültig machen | Meldet das Modell den Fehler, oder erfindet es einen Witz? | `isError: true` kommt an. Gute Modelle melden es, schwache denken sich gern selbst einen Witz aus |
-| 3 | `get_date_info` gibt `isoWeek` als String zurück | Wie reagiert `update_joke_page`, und korrigiert das Modell selbst? | Validierungsfehler, oft korrigiert das Modell den Typ im zweiten Versuch |
+| 3 | Im Auftrag verlangen *„Schreib das Zitat des Tages auf die Witz-Seite.“* | Schickt das Modell `page: "witz"` mit `quote` und `author`? Was macht es mit der Zod-Meldung? | Validierungsfehler, der das erwartete Feld nennt. Gute Modelle erklären, dass die Witz-Seite kein Zitat fasst, und schlagen die Seite `zitat` vor |
 | 4 | Den Auftrag unklar formulieren, etwa *„Mach was Schönes aufs Display.“* | Was macht das Modell ohne klare Vorgaben? | Zeigt, wie viel an Auftrag und `AGENTS.md` hängt |
-| 5 | Tool zurück auf `render_screen` umbenennen, die Grenze aus der Beschreibung streichen und dann *„Zeig nach dem Witz noch das Zitat des Tages.“* | Sucht das Modell ein passendes Tool, oder missbraucht es den Witz-Screen? | Schwache Modelle stecken das Zitat in `setup` und den Autor in `punchline`. Das Schema merkt nichts |
+| 5 | Die Seite `zitat` aus dem Schema von `update_page` streichen und dann *„Zeig nach dem Witz noch das Zitat des Tages.“* | Sagt das Modell, dass es keine Zitat-Seite gibt, oder missbraucht es die Witz-Seite? | Schwache Modelle stecken das Zitat in `setup` und den Autor in `punchline`. Das Schema merkt nichts, die Form stimmt (Seite 6, Regel 2) |
 | 6 | Im Tool `get_on_this_day` die Bereinigung von `U+00AD` entfernen *(nur mit Display)* | Sieht man es auf dem Display? | Unsichtbare Zeichen zeigen, dass Daten aus APIs nie so sauber sind, wie sie aussehen |
 | 7 | In `lib/larapaper.ts` die Revisionsmarke weglassen und zwei Witze nacheinander schicken *(nur mit Display)* | Warum zeigt die Vorschau den neuen Witz, das Display aber den alten? | LaraPaper verwirft das gespeicherte Bild nur, wenn sich das Markup ändert. Ein Detail, das in keiner Doku steht, sondern nur im Quellcode |
 | 8 | `LARAPAPER_TOKEN` in `.env` ungültig machen | Meldet das Modell den Fehler, oder behauptet es „fertig“? | `isError: true` mit „Token ungültig“. Gute Modelle melden es und versuchen es nicht endlos erneut |
@@ -146,7 +148,7 @@ Hier sieht man am deutlichsten, **wie ein Agent „denkt“.** Nach jedem Versuc
   ihn reparieren lassen. Das ist selbst eine gute Demo.
 - **Das Display reagiert nicht.** Die Vorschau der Seite in LaraPaper zeigen, die
   Logik ist dieselbe.
-- **LaraPaper ist nicht erreichbar.** Akt 1 ohne `update_joke_page` zeigen (der
+- **LaraPaper ist nicht erreichbar.** Akt 1 ohne `update_page` zeigen (der
   Agent präsentiert den Witz im Chat), oder den Ausfall selbst zur Demo machen
   (Fall 8 oben).
 - **Die Modell-API ist nicht erreichbar.** Auf Ollama (lokal) ausweichen. Das ist

@@ -10,7 +10,7 @@ Alle APIs wurden am 30.09.2026 live getestet und funktionieren ohne API-Key.
 
 | Server | Tools | Zweck |
 |---|---|---|
-| `trmnl-display` (bestehend) | `get_joke`, `get_date_info`, `update_joke_page`, **neu:** `update_page`, `list_pages`, `get_page`, `show_message` | Witz des Tages und alles rund ums Display |
+| `trmnl-display` (bestehend) | `get_joke`, `get_date_info`, `update_page` (**neu:** Seiten `zitat`, `geschichte`, `http`), **neu:** `list_pages`, `get_page` | Witz des Tages und alles rund ums Display |
 | `tagesinhalte` (neu) | `get_http_status`, `get_quote_of_the_day`, `get_on_this_day` | Reine Datenquellen, wissen nichts vom Display |
 
 `get_joke` ist das Haupttool des Projekts und in `03-mcp-tool-spezifikation.md`
@@ -32,10 +32,10 @@ server/templates/
 └── witz.blade.php  zitat.blade.php  geschichte.blade.php  http.blade.php  nachricht.blade.php
 ```
 
-Alle Display-Tools laufen über **eine** Funktion in `lib/larapaper.ts`, die eine
+Alle Seiten laufen über **eine** Funktion in `lib/larapaper.ts`, die eine
 Seite komplett hochlädt: `pushPage(page, data)`. Sie lädt die Vorlage, setzt die
 Revisionsmarke, baut `settings.yml`, packt das ZIP und schickt es an die
-Archiv-Schnittstelle (Details: `03-mcp-tool-spezifikation.md`, `update_joke_page`,
+Archiv-Schnittstelle (Details: `03-mcp-tool-spezifikation.md`, `update_page`,
 und `06-recherche-trmnl.md`, Abschnitt 7.7).
 
 ---
@@ -119,47 +119,34 @@ Geschichtsunterricht) und steht deshalb im Auftrag oder Systemprompt, nicht im T
 
 ---
 
-## `update_page` (Server `trmnl-display`)
+## Neue Seiten für `update_page` (Server `trmnl-display`)
 
-Überschreibt eine der vorbereiteten Seiten in LaraPaper (static-Recipe, siehe
-`06-recherche-trmnl.md`, Abschnitt 7.7).
+`update_page` ist in `03-mcp-tool-spezifikation.md` spezifiziert, mit den Seiten
+`witz` und `nachricht`. Für die Tagesplaylist kommen drei Seiten dazu. **Es entsteht
+kein neues Tool**, und die Beschreibung bleibt unverändert. Pro Seite wächst nur
+dreierlei: ein Zweig im Schema, eine Vorlage `server/templates/{page}.blade.php` und
+ein Eintrag `LARAPAPER_PAGE_<PAGE>=…` in `.env`.
 
-**Beschreibung (für den Agenten):**
-> "Ersetzt den Inhalt einer vorbereiteten Display-Seite. Welche Seiten es gibt und
-> welche Felder sie erwarten, steht im Schema. Das Layout ist fest, du lieferst nur
-> Text. Gespeichert wird sofort, angezeigt erst, wenn die Seite wieder an der Reihe
-> ist. Für den Witz des Tages ist update_joke_page zuständig, für freien Text
-> show_message."
-
-Die Seiten zählt die Beschreibung nicht mehr auf, das Schema tut es schon. So muss
-bei einer neuen Seite nur das Schema wachsen. Längen und „keine Emojis“ stehen an
-den Feldern.
-
-**Eingabeschema:**
+**Zusätzliche Zweige im Schema:**
 ```ts
 const kurz = z.string().max(160)
-  .describe('max. 160 Zeichen, keine Emojis, die Anzeige kann sie nicht darstellen');
+  .describe('Max. 160 Zeichen. ' + keineEmojis);
 
-z.discriminatedUnion('page', [
   z.object({ page: z.literal('zitat').describe('Zitat des Tages'),
-             fields: z.object({ quote: kurz, author: z.string() }) }),
+             fields: z.object({
+               quote: kurz.describe('Zitat aus get_quote_of_the_day, bei Bedarf ' +
+                 'übersetzt, Sinn erhalten. Max. 160 Zeichen. ' + keineEmojis),
+               author: z.string() }) }),
   z.object({ page: z.literal('geschichte').describe('Heute vor X Jahren'),
              fields: z.object({ year: z.number().int(), text: kurz }) }),
   z.object({ page: z.literal('http').describe('HTTP-Status mit Spruch'),
              fields: z.object({ code: z.number().int(), title: z.string(),
-                                comment: kurz.describe('Eigener Spruch zum Status, ' +
-                                  'max. 160 Zeichen, keine Emojis') }) })
-])
+                                comment: kurz.describe('Eigener Spruch zum Status. ' +
+                                  'Max. 160 Zeichen. ' + keineEmojis) }) })
 ```
 
-**Warum `discriminatedUnion`:** Das Modell sieht im Schema genau, welche Felder zu
-welcher Seite gehören. Ein generisches `fields: z.record(z.any())` wäre bequemer,
-würde aber falsche Feldnamen erst im Display sichtbar machen (leere Platzhalter).
-
-**Implementierung:** `pushPage(page, fields)`. Die Zuordnung Seite → `trmnlp_id`
-steht in `.env` (`LARAPAPER_PAGE_ZITAT=…`), die Vorlage in
-`server/templates/{page}.blade.php`. `fields` landen ausschließlich in
-`static_data`, nie im Markup.
+`fields` landen ausschließlich in `static_data`, nie im Markup. Anders als bei `witz`
+ergänzt der Server hier nichts, die Seiten zeigen nur, was das Modell liefert.
 
 **Rückgabe:** `{ "page": "zitat", "status": "updated", "rev": "…", "hint": "…" }`
 
@@ -240,15 +227,12 @@ Agent sich zurechtfindet, tragen die Seiten eindeutige Namen.
 
 ---
 
-## `show_message` (Server `trmnl-display`)
+## Sicherheit bei allen Seiten
 
-Beschreibung, Schema und Umsetzung stehen in `03-mcp-tool-spezifikation.md`: eigene
-Seite „Nachricht“, leerer Text blendet sie über `TRMNL_SKIP_DISPLAY` aus.
-
-> ⚠️ Sicherheitsnotiz: LaraPaper rendert die Seiten als **Blade**, und Blade kann
-> PHP ausführen. Deshalb liefert das Modell bei allen Display-Tools **nur Text**. Die
-> Vorlagen liegen fest im MCP-Server und geben Text nur über `{{ }}` (escapt) aus.
-> Auch `POST /api/display/update` nutzen wir aus diesem Grund nicht.
+> ⚠️ LaraPaper rendert die Seiten als **Blade**, und Blade kann PHP ausführen. Deshalb
+> liefert das Modell bei `update_page` **nur Text**. Die Vorlagen liegen fest im
+> MCP-Server und geben Text nur über `{{ }}` (escapt) aus. Auch
+> `POST /api/display/update` nutzen wir aus diesem Grund nicht.
 
 ---
 
@@ -257,10 +241,11 @@ Seite „Nachricht“, leerer Text blendet sie über `TRMNL_SKIP_DISPLAY` aus.
 Auftrag: *„Stell die Playlist für heute zusammen: ein Kaffee-Witz, ein Zitat, ein
 Ereignis aus der Geschichte und zum Abschluss ein HTTP-Status mit einem Spruch dazu.“*
 
-1. `get_date_info` → Datum für `get_on_this_day` und den Witz-Screen
+1. `get_date_info` → Datum für `get_on_this_day` (das Datum auf der Witz-Seite setzt
+   der Server selbst)
 2. parallel: `get_joke(topic: "coffee", lang: "en")`, `get_quote_of_the_day`, `get_on_this_day`, `get_http_status(418)`
 3. Modell: Ereignis auswählen, Witz und Zitat übersetzen, Spruch zum Statuscode schreiben, alles kürzen
-4. `update_joke_page` für den Witz, 3 × `update_page` für Zitat, Geschichte und HTTP-Status
+4. 4 × `update_page`: `witz`, `zitat`, `geschichte` und `http`
 5. LaraPaper rotiert bei jedem Geräte-Refresh zur nächsten Seite der Playlist. Jede
    Seite wird beim nächsten Mal, wenn sie dran ist, mit dem neuen Inhalt gerendert.
 

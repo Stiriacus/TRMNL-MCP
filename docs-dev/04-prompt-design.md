@@ -10,7 +10,8 @@ Arbeit ist das, was Code nicht kann:
 - den Text auf **Display-Länge** bringen.
 
 Alles andere auf dem Screen (Datum, Wochentag, KW, Titel, Quellenangabe) ist
-deterministisch und kommt aus `get_date_info` oder steht fest im Template.
+deterministisch. Datum, Wochentag und KW ergänzt `update_page` selbst (dieselbe
+Logik wie `get_date_info`), Titel und Quellenangabe stehen fest im Template.
 
 Warum überhaupt Übersetzung? Der deutsche Bestand der JokeAPI ist klein (rund 30
 jugendfreie Witze, Stand 01.10.2026), der englische deutlich größer (rund 180), und
@@ -74,7 +75,7 @@ System-Prompt präzisieren, bevor Layout oder Schema angepasst werden.
 ## Iterationshinweise (Phase 4)
 
 - **Zu lang?** Zeichenlimit im Prompt UND als harte Nachbearbeitung im Code
-  durchsetzen (siehe `update_joke_page`-Fehlerfälle in
+  durchsetzen (siehe `update_page`-Fehlerfälle in
   `03-mcp-tool-spezifikation.md`) – sich nicht allein auf das Modell verlassen.
 - **Pointe wandert ins Setup?** Im System-Prompt ausdrücklich sagen, dass Setup und
   Pointe getrennt bleiben, und ein Beispiel mitgeben.

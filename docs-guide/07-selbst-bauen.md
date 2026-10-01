@@ -163,13 +163,13 @@ Nach demselben Muster gibt es je einen Auftrag pro Tool.
 | Tool | Spezifikation | Worauf beim Prüfen achten |
 |---|---|---|
 | `get_date_info` | [docs-dev/03](../docs-dev/03-mcp-tool-spezifikation.md) | Kalenderwoche richtig (Donnerstagsregel)? Keine Bibliothek? |
-| `update_joke_page` | docs-dev/02, 03 und [06](../docs-dev/06-recherche-trmnl.md) (Abschnitt 7.7) | Text vom Modell nur in den Daten, **nie im Markup**? Ausgabe mit `{{ }}`? Revisionsmarke bei jedem Aufruf neu? Einzeiler ohne Pointe? |
+| `update_page`, zunächst nur Seite `witz` | docs-dev/02, 03 und [06](../docs-dev/06-recherche-trmnl.md) (Abschnitt 7.7) | Text vom Modell nur in den Daten, **nie im Markup**? Ausgabe mit `{{ }}`? Revisionsmarke bei jedem Aufruf neu? Einzeiler ohne Pointe? Datum vom Server, nicht vom Modell? |
 | `get_quote_of_the_day`, `get_on_this_day`, `get_http_status` als **zweiter Server** `tagesinhalte` | [docs-dev/07](../docs-dev/07-weitere-mcp-tools.md) | Rückgabe knapp? Weiche Trennstriche entfernt? |
-| `update_page` | docs-dev/07 | Token und Seiten-IDs nur aus `.env`, nie im Schema? Gleicher Upload-Weg wie `update_joke_page`? |
+| weitere Seiten in `update_page` (`nachricht`, `zitat`, `geschichte`, `http`) | docs-dev/03 und 07 | Nur neue Zweige, kein neues Tool? Beschreibung unverändert? Token und Seiten-IDs nur aus `.env`, nie im Schema? |
 | `list_pages`, `get_page` | docs-dev/07 | Gibt `get_page` nur Felder zurück, kein Markup? Bleiben fremde Seiten unangetastet? |
 
 !!! warning "Vorher in LaraPaper: die Seiten anlegen"
-    `update_joke_page` und `update_page` **überschreiben** Seiten, die es schon
+    `update_page` **überschreibt** Seiten, die es schon
     geben muss. Jede Seite einmal über die API anlegen
     (`POST /api/plugin_settings`), die ID in `server/.env` eintragen und die Seite
     einmalig in der LaraPaper-Oberfläche in die Playlist aufnehmen. Eine

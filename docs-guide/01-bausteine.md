@@ -35,11 +35,7 @@ sequenceDiagram
     H->>T: ausführen
     T-->>H: {"setup": "Was macht ein Informatiker …", "punchline": "…"}
     H->>M: Ergebnis
-    M-->>H: tool_use: get_date_info()
-    H->>T: ausführen
-    T-->>H: {"weekday": "Mittwoch", "formatted": "30 / 09 / 2026", "isoWeek": 40}
-    H->>M: Ergebnis
-    M-->>H: tool_use: update_joke_page(joke: {…}, date: {…})
+    M-->>H: tool_use: update_page(page: "witz", fields: {setup, punchline})
     H->>T: ausführen
     T-->>H: {"page": "witz", "status": "updated"}
     H->>M: Ergebnis

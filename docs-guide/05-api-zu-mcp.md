@@ -132,7 +132,6 @@ flowchart LR
     end
     subgraph S2 [MCP-Server trmnl-display]
         J[get_joke]
-        R[update_joke_page]
         U[update_page]
         L[list_pages · get_page]
     end

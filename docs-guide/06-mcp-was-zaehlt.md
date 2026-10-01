@@ -78,32 +78,36 @@ Hier sind vier Varianten für dasselbe Tool.
     HTTP-Status“** veraltet mit jeder neuen Seite. Und die Feldregeln stehen doppelt,
     hier und im Schema, und laufen irgendwann auseinander.
 
-=== "Gut (unser update_joke_page)"
+=== "Gut (unser update_page)"
     ```ts
     description:
-      'Setzt den Witz auf der Display-Seite "Witz des Tages" und ersetzt den ' +
-      'bisherigen. Gespeichert wird sofort, angezeigt erst, wenn die Seite wieder ' +
-      'an der Reihe ist. Nur für diese Seite: Inhalte anderer Seiten über ' +
-      'update_page, freien Text über show_message.',
-    inputSchema: z.object({
-      joke: z.object({
-        setup: z.string().min(1).max(200).describe(
-          'Aufbau bzw. ganzer Einzeiler aus get_joke, auf Deutsch, max. ca. 140 ' +
-          'Zeichen. Übersetzen und kürzen erlaubt. Keine Emojis, die Anzeige kann ' +
-          'sie nicht darstellen'),
-        punchline: z.string().max(120).describe(
-          'Pointe aus get_joke, max. ca. 100 Zeichen, leer bei Einzeilern. ' +
-          'Beim Übersetzen die Pointe erhalten, nicht erklären. Keine Emojis')
+      'Ersetzt den Inhalt einer Display-Seite, z. B. den Witz des Tages. Welche ' +
+      'Seiten es gibt und welche Felder sie erwarten, steht im Schema. Das Layout ' +
+      'ist fest, du lieferst nur Text. Gespeichert wird sofort, angezeigt erst, ' +
+      'wenn die Seite wieder an der Reihe ist.',
+    inputSchema: z.discriminatedUnion('page', [
+      z.object({
+        page: z.literal('witz')
+          .describe('Witz des Tages. Datum und Kalenderwoche setzt die Seite selbst'),
+        fields: z.object({
+          setup: z.string().min(1).max(200).describe(
+            'Aufbau bzw. ganzer Einzeiler aus get_joke, auf Deutsch, max. ca. 140 ' +
+            'Zeichen. Übersetzen und kürzen erlaubt. Keine Emojis, die Anzeige ' +
+            'kann sie nicht darstellen'),
+          punchline: z.string().max(120).describe(
+            'Pointe aus get_joke, max. ca. 100 Zeichen, leer bei Einzeilern. ' +
+            'Beim Übersetzen die Pointe erhalten, nicht erklären. Keine Emojis')
+        })
       }),
-      date: z.object({ /* … */ })
-        .describe('Rückgabe von get_date_info, unverändert übernehmen')
-    })
+      // weitere Seiten: nachricht, zitat, geschichte, http
+    ])
     ```
-    Die Beschreibung sagt, **was** das Tool bewirkt (Witz gesetzt, alter ersetzt,
-    Anzeige verzögert) und **wofür nicht**. Was jedes Feld enthalten muss und
-    **woher** es kommt, steht am Feld. Kein Wort über Geräte, Backend oder
-    Reihenfolge. Dass `update_joke_page` nach `get_joke` kommt, folgt daraus, dass
-    der Witz *aus* `get_joke` stammt.
+    Die Beschreibung sagt, **was** das Tool bewirkt (Inhalt ersetzt, Anzeige
+    verzögert) und dass das Modell nur Text liefert. Welche Seiten es gibt, was jedes
+    Feld enthalten muss und **woher** es kommt, steht im Schema. Kein Wort über
+    Geräte, Backend oder Reihenfolge. Dass `update_page` nach `get_joke` kommt, folgt
+    daraus, dass der Witz *aus* `get_joke` stammt. Eine Abgrenzung zu anderen Tools
+    braucht es nicht mehr, denn es gibt nur dieses eine für alle Seiten (Regel 6).
 
 !!! note "Wenn die Hardware doch durchschlägt"
     „Max. 140 Zeichen, keine Emojis“ hat seinen Grund in der Anzeige. Die Hardware
@@ -168,7 +172,7 @@ tun kann. Findet die API zum Stichwort keinen Witz, lautet unser Text deshalb
 
 | Aufgabe | Wer macht es? | Warum |
 |---|---|---|
-| Datum, Kalenderwoche | Tool `get_date_info` (reiner Code) | Modelle kennen das heutige Datum nicht zuverlässig und verrechnen sich bei Kalenderwochen |
+| Datum, Kalenderwoche | Tool `get_date_info` (reiner Code), auf der Witz-Seite setzt `update_page` es selbst | Modelle kennen das heutige Datum nicht zuverlässig und verrechnen sich bei Kalenderwochen. Was das Modell nur unverändert durchreichen würde, gibt es ihm gar nicht erst in die Hand |
 | Witz abrufen, jugendfrei filtern | Tool `get_joke` (API-Aufruf, `safe-mode` fest im Code) | Inhalt kommt aus einer geprüften Quelle, der Filter hängt nicht am Modell |
 | Layout, Rendering | feste Vorlage im MCP-Server, gerendert von LaraPaper | muss exakt und reproduzierbar sein |
 | Witz auswählen, übersetzen, kürzen | **Modell** | Hier ist Sprachgefühl gefragt |
@@ -197,21 +201,29 @@ Technik, und deshalb steht der Satz überhaupt dort (Regel 1).
 
 ## 6. Wenige, klar geschnittene Tools
 
-- Lieber `get_joke`, `get_date_info` und `update_joke_page` als ein
+- Lieber `get_joke`, `get_date_info` und `update_page` als ein
   `do_everything(config)`. Kleine Tools kann das Modell **flexibel kombinieren**.
 - Aber auch nicht **40 Tools** für jede API-Route. Jedes Tool kostet Kontext und
   erschwert die Auswahl.
 - Rückgaben bleiben **knapp** und enthalten nur die Felder, die das Modell für den
   nächsten Schritt braucht.
-- **Der Name muss halten, was das Tool kann.** Aus `render_screen` wurde
-  `render_joke_screen`, als klar war, dass es nur *einen* Screen kann (siehe
-  Regel 2). Später wurde daraus `update_joke_page`, denn „render“ und „screen“ sagen,
-  *wie* und *worauf* etwas erscheint, nicht was das Tool bewirkt (siehe Regel 1).
-  Aus demselben Grund heißt es `update_page` statt `update_plugin`: „Plugin“ ist
-  LaraPaper-Vokabular, der Nutzer spricht von Seiten.
-- Für alles andere gibt es `update_page`, bei dem jede Seite ein festes Layout und
-  ein eigenes Schema hat. Neuer Inhalt heißt dann **neue Seite**, nicht neues Tool
-  und schon gar nicht ein Universal-Tool, in das das Modell freies Layout kippt.
+- **Neuer Inhalt heißt neue Seite, nicht neues Tool.** `update_page` hat für jede
+  Seite einen eigenen Zweig im Schema mit festem Layout und eigenen Feldern. Eine
+  neue Seite ist ein Zweig mehr, die Beschreibung bleibt gleich. Schon gar nicht
+  gibt es ein Universal-Tool, in das das Modell freies Layout kippt.
+- **Der Name muss halten, was das Tool kann.** Bei uns hat das drei Umbauten
+  gebraucht:
+    1. `render_screen` versprach ein allgemeines Rendering, verlangte aber einen Witz
+       (siehe Regel 2). Also `render_joke_screen`.
+    2. „render“ und „screen“ sagen, *wie* und *worauf* etwas erscheint, nicht was
+       das Tool bewirkt (Regel 1). Also `update_joke_page`. Aus demselben Grund wurde
+       `update_plugin` zu `update_page`: „Plugin“ ist LaraPaper-Vokabular, der
+       Nutzer spricht von Seiten.
+    3. Dann blieb die Frage, warum der Witz ein eigenes Tool hat und das Zitat
+       nicht. Der einzige Unterschied war der Parameter `date`, und den hat das Modell
+       nur unverändert durchgereicht (Regel 4). Seit der Server das Datum selbst setzt,
+       ist der Witz eine Seite wie jede andere. **Am Ende verschwand das Witz-Tool
+       ganz**, ebenso `show_message`, das jetzt die Seite `nachricht` ist.
 - **Lesen gehört genauso zugeschnitten wie Schreiben.** Damit der Agent einen Fehler
   auf dem Display gezielt korrigieren kann, gibt es `list_pages` und `get_page`.
   `get_page` liefert nur die Felder, **nicht das Markup**. Das Modell soll Inhalte

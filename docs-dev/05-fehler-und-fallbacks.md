@@ -13,12 +13,12 @@ melden, **keine Werte erfinden**.
 
 | Ausfall | Erkennung | Fallback-Verhalten |
 |---|---|---|
-| JokeAPI nicht erreichbar / Timeout | `get_joke` liefert `isError: true` | Agent meldet den Fehler im Chat und zeigt **keinen selbst erfundenen Witz**; auf Nachfrage kann er per `show_message` einen reinen Text anzeigen, der klar kein Witz aus der API ist |
+| JokeAPI nicht erreichbar / Timeout | `get_joke` liefert `isError: true` | Agent meldet den Fehler im Chat und zeigt **keinen selbst erfundenen Witz**; auf Nachfrage kann er per `update_page` (Seite `nachricht`) einen reinen Text anzeigen, der klar kein Witz aus der API ist |
 | Kein Witz zum Stichwort (HTTP 400, `code: 106`) | `get_joke` liefert `isError: true` mit Hinweis | Agent versucht es ohne `topic` oder mit `lang=en` (genau das steht im Fehlertext) |
 | JokeAPI liefert unerwartetes Format (API-Änderung) | JSON-Parsing/Zod-Validierung schlägt fehl | Wie „nicht erreichbar“; zusätzlich Stolperstein-Eintrag anlegen, da das auf eine API-Änderung hindeutet |
 | JokeAPI-Rate-Limit (120 Anfragen pro Minute) | HTTP 429 | `isError: true` mit Hinweis, kurz zu warten. Bei einem Agenten, der „nur noch einen Witz“ holt, durchaus erreichbar |
 | LLM / Harness nicht erreichbar | Kein Agenten-Lauf möglich | Kein neuer Screen, der zuletzt gerenderte bleibt aktiv – bewusst akzeptiert, da es keine Zeitsteuerung gibt |
-| Agent liefert zu langen Witz | Zeichenlimit-Check in `update_joke_page` | Setup auf 140, Pointe auf 100 Zeichen kürzen (an Wortgrenze, mit "…") und Warnung im Tool-Ergebnis zurückgeben, damit der Agent nachbessern kann |
+| Agent liefert zu langen Witz | Zeichenlimit-Check in `update_page` | Setup auf 140, Pointe auf 100 Zeichen kürzen (an Wortgrenze, mit "…") und Warnung im Tool-Ergebnis zurückgeben, damit der Agent nachbessern kann |
 | LaraPaper beim Upload nicht erreichbar / Timeout | `fetch` in `lib/larapaper.ts` schlägt fehl | `isError: true`. Die Seite in LaraPaper bleibt unverändert, das Display zeigt weiter den letzten Witz. Agent meldet den Fehler und behauptet nicht „fertig“ |
 | Token ungültig (HTTP 401) | Antwort der Archiv-Schnittstelle | `isError: true` mit „Token ungültig oder abgelaufen“. Das Modell kann das nicht beheben und soll nicht erneut versuchen |
 | Upload abgelehnt (HTTP 404, 422, 500) | Antwort der Archiv-Schnittstelle | `isError: true` mit Status und Meldung. Das ist ein Fehler im Server-Code (ZIP-Aufbau, falsche ID), kein Fall für das Modell. Alte Seite bleibt aktiv |
@@ -47,8 +47,10 @@ Bildbibliothek** (z. B. `@napi-rs/canvas`, SVG + `sharp`). Entschieden ist: **we
 noch**. LaraPaper rendert selbst (HTML → Bild, Graustufen, Größenlimit) mit dem
 TRMNL-Framework. Der MCP-Server lädt nur die Seite hoch (siehe `06`, Abschnitt 7.7).
 
-Die Schnittstelle von `update_joke_page` zum Modell (Name, Eingabeschema) ist
-dabei gleich geblieben. Nur die Rückgabe enthält keinen Dateinamen und keine URL mehr.
+Die Schnittstelle des Witz-Tools zum Modell (Eingabeschema) ist dabei gleich
+geblieben. Nur die Rückgabe enthält keinen Dateinamen und keine URL mehr. (Später
+ist das Witz-Tool in `update_page` aufgegangen, siehe `03`. Das war eine Entscheidung
+über den Zuschnitt der Tools, nicht über das Rendering.)
 
 ## Bewusst Kaputtes einplanen (siehe auch `anleitung.md`)
 
@@ -58,9 +60,9 @@ sichtbar zu machen:
 1. JokeAPI-Aufruf im Code auf eine falsche URL zeigen lassen → beobachten, ob
    der Agent den Fehler erkennt und wie er reagiert (bricht ab? meldet den Fehler?
    erfindet einen Witz?).
-2. `get_date_info` absichtlich ein falsches Feld zurückgeben lassen (z. B.
-   `isoWeek` als String statt Zahl) → beobachten, wie `update_joke_page` (Zod)
-   reagiert und ob der Agent den Validierungsfehler richtig interpretiert.
-3. Die Tool-Beschreibung von `update_joke_page` auf eine Zeile ohne Kontext kürzen
+2. `update_page` mit `page: "witz"` und den Feldern der Seite `zitat` aufrufen →
+   beobachten, welche Meldung Zod liefert und ob der Agent den Validierungsfehler
+   richtig interpretiert.
+3. Die Tool-Beschreibung von `update_page` auf eine Zeile ohne Kontext kürzen
    → beobachten, ob der Agent das Tool noch zuverlässig zur richtigen Zeit
    aufruft.
